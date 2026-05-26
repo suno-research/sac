@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --suno-red: #D42126;
+  --suno-bg: #FFFFFF;
+  --suno-neutral: #DDDDDD;
+  --suno-success: #16a34a;
+  --suno-warning: #f59e0b;
+  --suno-muted: #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f8f9fa;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar sutil */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DDDDDD; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
