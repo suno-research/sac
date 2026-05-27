@@ -12,12 +12,31 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-[#F9FAFB] font-sans antialiased">
+      <body style={{ margin: 0, padding: 0, backgroundColor: "#F9FAFB" }}>
         <Sidebar />
-        <div style={{ marginLeft: "256px" }} className="flex flex-col min-h-screen">
+        <div style={{
+          marginLeft: "256px",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          width: "calc(100% - 256px)"
+        }}>
           <Header />
-          <main style={{ paddingTop: "80px" }} className="flex-1 px-12 pb-12">
-            <div className="max-w-6xl mx-auto w-full pt-8">{children}</div>
+          <main style={{
+            paddingTop: "80px",
+            paddingLeft: "48px",
+            paddingRight: "48px",
+            paddingBottom: "48px",
+            flex: 1
+          }}>
+            <div style={{
+              maxWidth: "1100px",
+              marginLeft: "auto",
+              marginRight: "auto",
+              width: "100%"
+            }}>
+              {children}
+            </div>
           </main>
         </div>
       </body>
