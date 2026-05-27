@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { Users, Clock, AlertCircle, Grid, ArrowRight } from "lucide-react";
 import {
   funcionarios,
   movimentacoes,
@@ -12,11 +12,17 @@ import {
   ferramentas,
   acessos,
 } from "@/lib/mock-data";
+import {
+  thFirst,
+  thMid,
+  thLast,
+  tdName,
+  tdCargo,
+  tdMid,
+  tdLast,
+} from "@/lib/table-classes";
 
-const thClass =
-  "px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider";
 const trClass = "border-b border-[#F9FAFB] hover:bg-[#FAFAFA] transition-colors";
-const tdClass = "px-8 py-5 text-sm";
 
 function getInitials(nome: string) {
   return nome
@@ -49,10 +55,30 @@ export default function DashboardPage() {
   const offboardingsAbertos = offboardings.filter((o) => o.status === "Em andamento");
 
   const kpis = [
-    { label: "Funcionários ativos", value: totalAtivos },
-    { label: "Acessos a conceder", value: pendentesConcessao },
-    { label: "Acessos a remover", value: pendentesRemocao },
-    { label: "Ferramentas cadastradas", value: totalFerramentas },
+    {
+      label: "Funcionários ativos",
+      value: totalAtivos,
+      icon: <Users className="h-5 w-5 text-[#3B82F6]" />,
+      iconBg: "#EFF6FF",
+    },
+    {
+      label: "Acessos a conceder",
+      value: pendentesConcessao,
+      icon: <Clock className="h-5 w-5 text-[#D97706]" />,
+      iconBg: "#FEF3C7",
+    },
+    {
+      label: "Acessos a remover",
+      value: pendentesRemocao,
+      icon: <AlertCircle className="h-5 w-5 text-[#D42126]" />,
+      iconBg: "#FEF2F2",
+    },
+    {
+      label: "Ferramentas cadastradas",
+      value: totalFerramentas,
+      icon: <Grid className="h-5 w-5 text-[#6B7280]" />,
+      iconBg: "#F3F4F6",
+    },
   ];
 
   const statusBadge: Record<string, string> = {
@@ -72,11 +98,30 @@ export default function DashboardPage() {
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8"
+            style={{
+              background: "white",
+              borderRadius: "16px",
+              border: "1px solid #E5E7EB",
+              padding: "32px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            }}
           >
-            <p className="text-sm font-medium text-[#6B7280] mb-6">{kpi.label}</p>
-            <p className="text-4xl font-bold text-[#212121]">{kpi.value}</p>
-            <p className="text-sm text-[#9CA3AF] mt-2">{kpi.label}</p>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+              }}
+            >
+              <span style={{ fontSize: "13px", fontWeight: 500, color: "#9CA3AF" }}>{kpi.label}</span>
+              <div style={{ padding: "8px", borderRadius: "12px", background: kpi.iconBg }}>
+                {kpi.icon}
+              </div>
+            </div>
+            <div style={{ fontSize: "40px", fontWeight: 700, color: "#212121", lineHeight: 1 }}>
+              {kpi.value}
+            </div>
           </div>
         ))}
       </div>
@@ -126,10 +171,10 @@ export default function DashboardPage() {
             <table className="w-full">
               <thead className="bg-[#F9FAFB]">
                 <tr>
-                  <th className={thClass}>Funcionário</th>
-                  <th className={thClass}>Tipo</th>
-                  <th className={thClass}>Data</th>
-                  <th className={thClass}>Status</th>
+                  <th className={thFirst}>Funcionário</th>
+                  <th className={thMid}>Tipo</th>
+                  <th className={thMid}>Data</th>
+                  <th className={thLast}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -137,7 +182,7 @@ export default function DashboardPage() {
                   const func = getFuncionarioById(mov.funcionarioId);
                   return (
                     <tr key={mov.id} className={trClass}>
-                      <td className={tdClass}>
+                      <td className={tdName}>
                         <div className="flex items-center gap-3">
                           {func && (
                             <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
@@ -147,9 +192,9 @@ export default function DashboardPage() {
                           <span className="font-medium text-[#212121]">{func?.nome ?? "—"}</span>
                         </div>
                       </td>
-                      <td className={tdClass}>
+                      <td className={tdMid}>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${
                             mov.tipo === "onboarding"
                               ? "bg-[#DCFCE7] text-[#16A34A]"
                               : "bg-[#FEF2F2] text-[#D42126]"
@@ -158,12 +203,12 @@ export default function DashboardPage() {
                           {mov.tipo === "onboarding" ? "Onboarding" : "Offboarding"}
                         </span>
                       </td>
-                      <td className={`${tdClass} text-[#6B7280]`}>
+                      <td className={`${tdMid} text-[#6B7280]`}>
                         {new Date(mov.data + "T00:00:00").toLocaleDateString("pt-BR")}
                       </td>
-                      <td className={tdClass}>
+                      <td className={tdLast}>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${
                             statusBadge[mov.status] ?? "bg-[#F3F4F6] text-[#6B7280]"
                           }`}
                         >
@@ -181,7 +226,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
           <div className="px-8 py-5 border-b border-[#F3F4F6] flex items-center justify-between">
             <h2 className="text-base font-semibold text-[#212121]">Pendências de acesso</h2>
-            <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#FEF3C7] text-[#D97706]">
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#FEF3C7] text-[#D97706] whitespace-nowrap">
               {pendentesConcessao + pendentesRemocao} itens
             </span>
           </div>
@@ -189,15 +234,15 @@ export default function DashboardPage() {
             <table className="w-full">
               <thead className="bg-[#F9FAFB]">
                 <tr>
-                  <th className={thClass}>Funcionário</th>
-                  <th className={thClass}>Área</th>
-                  <th className={thClass}>Ação</th>
+                  <th className={thFirst}>Funcionário</th>
+                  <th className={thMid}>Área</th>
+                  <th className={thLast}>Ação</th>
                 </tr>
               </thead>
               <tbody>
                 {pendenciasList.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-8 py-8 text-center text-sm text-[#9CA3AF]">
+                    <td colSpan={3} className="pl-8 pr-8 py-8 text-center text-sm text-[#9CA3AF]">
                       Nenhuma pendência
                     </td>
                   </tr>
@@ -206,7 +251,7 @@ export default function DashboardPage() {
                     const func = getFuncionarioById(p.funcionarioId);
                     return (
                       <tr key={p.funcionarioId} className={trClass}>
-                        <td className={tdClass}>
+                        <td className={tdName}>
                           <div className="flex items-center gap-3">
                             {func && (
                               <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
@@ -219,11 +264,11 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </td>
-                        <td className={`${tdClass} text-[#6B7280]`}>{func?.area}</td>
-                        <td className={tdClass}>
+                        <td className={`${tdMid} text-[#6B7280]`}>{func?.area}</td>
+                        <td className={tdLast}>
                           <Link
                             href={`/funcionarios/${p.funcionarioId}`}
-                            className="text-sm font-medium text-[#D42126] hover:underline"
+                            className="text-sm font-medium text-[#D42126] hover:underline whitespace-nowrap"
                           >
                             Ver acessos
                           </Link>
@@ -249,17 +294,17 @@ export default function DashboardPage() {
           <table className="w-full">
             <thead className="bg-[#F9FAFB]">
               <tr>
-                <th className={`${thClass} min-w-[200px]`}>Nome</th>
-                <th className={thClass}>Cargo</th>
-                <th className={thClass}>Área</th>
-                <th className={thClass}>Status</th>
-                <th className={thClass} />
+                <th className={thFirst}>Nome</th>
+                <th className={`${thMid} min-w-[200px]`}>Cargo</th>
+                <th className={thMid}>Área</th>
+                <th className={thMid}>Status</th>
+                <th className={thLast} />
               </tr>
             </thead>
             <tbody>
               {funcionarios.slice(0, 6).map((func) => (
                 <tr key={func.id} className={trClass}>
-                  <td className={`${tdClass} min-w-[200px]`}>
+                  <td className={tdName}>
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                         {getInitials(func.nome)}
@@ -270,11 +315,11 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </td>
-                  <td className={`${tdClass} text-[#374151]`}>{func.cargo}</td>
-                  <td className={`${tdClass} text-[#6B7280]`}>{func.area}</td>
-                  <td className={tdClass}>
+                  <td className={`${tdCargo} text-[#374151]`}>{func.cargo}</td>
+                  <td className={`${tdMid} text-[#6B7280]`}>{func.area}</td>
+                  <td className={tdMid}>
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${
                         func.status === "Ativo"
                           ? "bg-[#DCFCE7] text-[#16A34A]"
                           : "bg-[#F3F4F6] text-[#6B7280]"
@@ -283,10 +328,10 @@ export default function DashboardPage() {
                       {func.status}
                     </span>
                   </td>
-                  <td className={`${tdClass} text-right`}>
+                  <td className={`${tdLast} text-right`}>
                     <Link
                       href={`/funcionarios/${func.id}`}
-                      className="text-sm font-medium text-[#D42126] hover:underline"
+                      className="text-sm font-medium text-[#D42126] hover:underline whitespace-nowrap"
                     >
                       Ver acessos
                     </Link>

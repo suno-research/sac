@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { funcionarios, getFuncionarioById } from "@/lib/mock-data";
 import type { AreaEmpresa } from "@/lib/mock-data";
+import { thFirst, thMid, thLast, tdName, tdCargo, tdMid, tdLast } from "@/lib/table-classes";
 
 const areas: AreaEmpresa[] = [
   "TI",
@@ -15,6 +16,8 @@ const areas: AreaEmpresa[] = [
   "Jurídico",
   "Operações",
 ];
+
+const trClass = "border-b border-[#F9FAFB] hover:bg-[#FAFAFA] transition-colors";
 
 function getInitials(nome: string) {
   return nome
@@ -119,35 +122,23 @@ export default function FuncionariosPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-[#F9FAFB]">
             <tr>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Nome
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Cargo
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Área
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Gestor
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Entrada
-              </th>
-              <th className="px-8 py-4" />
+              <th className={thFirst}>Nome</th>
+              <th className={`${thMid} min-w-[200px]`}>Cargo</th>
+              <th className={thMid}>Área</th>
+              <th className={thMid}>Gestor</th>
+              <th className={thMid}>Status</th>
+              <th className={thMid}>Entrada</th>
+              <th className={thLast} />
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-8 py-10 text-center text-sm text-[#9CA3AF]">
+                <td colSpan={7} className="pl-8 pr-8 py-10 text-center text-sm text-[#9CA3AF]">
                   Nenhum funcionário encontrado.
                 </td>
               </tr>
@@ -157,11 +148,8 @@ export default function FuncionariosPage() {
                   ? getFuncionarioById(func.gestorId)?.nome
                   : "—";
                 return (
-                  <tr
-                    key={func.id}
-                    className="border-b border-[#F9FAFB] hover:bg-[#FAFAFA] transition-colors"
-                  >
-                    <td className="px-8 py-5">
+                  <tr key={func.id} className={trClass}>
+                    <td className={tdName}>
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                           {getInitials(func.nome)}
@@ -172,16 +160,16 @@ export default function FuncionariosPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-[#374151]">{func.cargo}</td>
-                    <td className="px-8 py-5">
-                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151]">
+                    <td className={`${tdCargo} text-[#374151]`}>{func.cargo}</td>
+                    <td className={tdMid}>
+                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151] whitespace-nowrap">
                         {func.area}
                       </span>
                     </td>
-                    <td className="px-8 py-5 text-[#6B7280]">{gestorNome}</td>
-                    <td className="px-8 py-5">
+                    <td className={`${tdMid} text-[#6B7280]`}>{gestorNome}</td>
+                    <td className={tdMid}>
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${
                           func.status === "Ativo"
                             ? "bg-[#DCFCE7] text-[#16A34A]"
                             : "bg-[#F3F4F6] text-[#6B7280]"
@@ -190,13 +178,13 @@ export default function FuncionariosPage() {
                         {func.status}
                       </span>
                     </td>
-                    <td className="px-8 py-5 text-[#6B7280]">
+                    <td className={`${tdMid} text-[#6B7280]`}>
                       {new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-8 py-5 text-right">
+                    <td className={`${tdLast} text-right`}>
                       <Link
                         href={`/funcionarios/${func.id}`}
-                        className="text-sm font-medium text-[#D42126] hover:underline"
+                        className="text-sm font-medium text-[#D42126] hover:underline whitespace-nowrap"
                       >
                         Ver acessos
                       </Link>
@@ -208,7 +196,7 @@ export default function FuncionariosPage() {
           </tbody>
         </table>
         {filtered.length > 0 && (
-          <div className="px-8 py-4 border-t border-[#F3F4F6] text-xs text-[#6B7280]">
+          <div className="pl-8 pr-8 py-4 border-t border-[#F3F4F6] text-xs text-[#6B7280]">
             Exibindo {filtered.length} de {funcionarios.length} funcionários
           </div>
         )}

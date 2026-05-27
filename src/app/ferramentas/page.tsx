@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ferramentas, getTotalUsuariosAtivos } from "@/lib/mock-data";
 import type { CategoriaFerramenta, TipoAcesso } from "@/lib/mock-data";
+import { thFirst, thMid, thLast, tdName, tdMid, tdLast } from "@/lib/table-classes";
+
+const trClass = "border-b border-[#F9FAFB] hover:bg-[#FAFAFA] transition-colors";
 
 const categorias: CategoriaFerramenta[] = [
   "Comunicação",
@@ -126,27 +129,17 @@ export default function FerramentasPage() {
         <table className="w-full text-sm">
           <thead className="bg-[#F9FAFB]">
             <tr>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Nome
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Categoria
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Tipo de acesso
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                URL
-              </th>
-              <th className="px-8 py-4 text-right text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                Usuários ativos
-              </th>
+              <th className={thFirst}>Nome</th>
+              <th className={thMid}>Categoria</th>
+              <th className={thMid}>Tipo de acesso</th>
+              <th className={thMid}>URL</th>
+              <th className={`${thLast} text-right`}>Usuários ativos</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#F3F4F6]">
+          <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-sm text-[#9CA3AF]">
+                <td colSpan={5} className="pl-8 pr-8 py-10 text-center text-sm text-[#9CA3AF]">
                   Nenhuma ferramenta encontrada.
                 </td>
               </tr>
@@ -154,26 +147,26 @@ export default function FerramentasPage() {
               filtered.map((f) => {
                 const ativos = getTotalUsuariosAtivos(f.id);
                 return (
-                  <tr key={f.id} className="border-b border-[#F9FAFB] hover:bg-[#FAFAFA] transition-colors">
-                    <td className="px-8 py-5">
+                  <tr key={f.id} className={trClass}>
+                    <td className={tdName}>
                       <div className="flex items-center">
-                        <span className="mr-3 text-base" aria-hidden>
+                        <span className="mr-3 text-base flex-shrink-0" aria-hidden>
                           {emojiCategoria[f.categoria]}
                         </span>
                         <div>
                           <p className="text-sm font-semibold text-[#212121]">{f.nome}</p>
-                          <p className="text-xs text-[#9CA3AF]">{f.descricao}</p>
+                          <p className="text-xs text-[#9CA3AF] mt-0.5">{f.descricao}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5">
-                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151]">
+                    <td className={tdMid}>
+                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151] whitespace-nowrap">
                         {f.categoria}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className={tdMid}>
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${
                           f.tipo === "Passbolt"
                             ? "bg-[#FEF3C7] text-[#D97706]"
                             : "bg-[#EFF6FF] text-[#3B82F6]"
@@ -182,7 +175,7 @@ export default function FerramentasPage() {
                         {f.tipo}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 text-sm min-w-[200px]">
                       <a
                         href={f.url}
                         target="_blank"
@@ -192,8 +185,8 @@ export default function FerramentasPage() {
                         {f.url.replace("https://", "")}
                       </a>
                     </td>
-                    <td className="px-8 py-5 text-right">
-                      <span className="font-medium text-[#111827]">{ativos}</span>
+                    <td className={`${tdLast} text-right font-medium text-[#212121]`}>
+                      {ativos}
                     </td>
                   </tr>
                 );
@@ -202,7 +195,7 @@ export default function FerramentasPage() {
           </tbody>
         </table>
         {filtered.length > 0 && (
-          <div className="px-6 py-3 border-t border-[#F3F4F6] text-xs text-[#6B7280]">
+          <div className="pl-8 pr-8 py-4 border-t border-[#F3F4F6] text-xs text-[#6B7280]">
             Exibindo {filtered.length} de {ferramentas.length} ferramentas
           </div>
         )}
