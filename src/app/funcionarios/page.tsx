@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { ChevronRight } from "lucide-react";
 import type { Funcionario, AreaEmpresa } from "@/lib/mock-data";
 import {
@@ -43,6 +44,10 @@ function TableSkeleton() {
 }
 
 export default function FuncionariosPage() {
+  const { data: session } = useSession();
+  const isGestor = session?.user?.role === "gestor";
+  const userEmail = session?.user?.email || "";
+
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -54,11 +59,21 @@ export default function FuncionariosPage() {
     fetch("/api/funcionarios")
       .then((r) => r.json())
       .then((data) => {
-        setFuncionarios(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? (data as Funcionario[]) : [];
+        if (isGestor) {
+          const gestorRecord = list.find((f) => f.email === userEmail);
+          if (gestorRecord) {
+            setFuncionarios(list.filter((f) => f.gestorId === gestorRecord.id));
+          } else {
+            setFuncionarios([]);
+          }
+        } else {
+          setFuncionarios(list);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [isGestor, userEmail]);
 
   const getFuncionarioById = useMemo(() => {
     const map = new Map(funcionarios.map((f) => [f.id, f]));
@@ -104,7 +119,11 @@ export default function FuncionariosPage() {
     <PageMotion>
       <PageHeader
         title="Funcionários"
-        description={`${funcionarios.length} funcionários cadastrados`}
+        description={
+          isGestor
+            ? `${funcionarios.length} membros do seu time`
+            : `${funcionarios.length} funcionários cadastrados`
+        }
       />
 
       <FilterBar
