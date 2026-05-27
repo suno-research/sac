@@ -81,7 +81,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-[1280px]">
+    <div className="space-y-10 max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-[#111827]">Dashboard</h1>
         <p className="text-sm text-[#6B7280] mt-1">Visão geral do controle de acessos da Suno</p>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-6"
+            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8 min-h-[120px]"
           >
             <div className="flex items-start justify-end">
               <div className={`p-2.5 rounded-xl ${kpi.iconBg}`}>

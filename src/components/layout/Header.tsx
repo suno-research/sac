@@ -5,7 +5,10 @@ const pendencias = countPendentesConcessao() + countPendentesRemocao();
 
 export function Header() {
   return (
-    <header className="fixed top-0 left-64 right-0 z-20 h-16 bg-white border-b border-[#E5E7EB] flex items-center justify-between px-8">
+    <header
+      style={{ left: "256px" }}
+      className="fixed top-0 right-0 z-20 h-16 bg-white border-b border-[#E5E7EB] flex items-center justify-between px-8"
+    >
       <div />
       <div className="flex items-center gap-3">
         <button className="relative p-2 rounded-xl text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827] transition-colors">

@@ -14,7 +14,10 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="fixed inset-y-0 left-0 w-64 bg-[#111827] flex flex-col z-30">
+    <aside
+      style={{ width: "256px" }}
+      className="fixed inset-y-0 left-0 bg-[#111827] flex flex-col z-30"
+    >
       <div className="px-6 py-6 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-[#D42126] flex items-center justify-center flex-shrink-0">

@@ -50,15 +50,12 @@ export default function PerfisPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {perfis.map((perfil) => {
           const ferrsDoPerfil = perfil.ferramentaIds.map(getFerramentaById).filter(Boolean);
 
           return (
-            <div
-              key={perfil.id}
-              className="rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden"
-            >
+            <div key={perfil.id} className="h-auto shadow-sm">
               <div className="bg-[#111827] rounded-t-2xl px-6 py-5 flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-white text-lg font-semibold">{perfil.cargo}</h2>
@@ -74,7 +71,7 @@ export default function PerfisPage() {
                 </button>
               </div>
 
-              <div className="bg-white rounded-b-2xl border border-[#E5E7EB] border-t-0 px-6 py-5">
+              <div className="bg-white border border-[#E5E7EB] border-t-0 rounded-b-2xl px-6 py-5 h-auto">
                 <p className="text-sm text-[#6B7280] mb-4">{perfil.descricao}</p>
 
                 <div className="flex flex-wrap gap-2">
@@ -83,7 +80,7 @@ export default function PerfisPage() {
                       f && (
                         <span
                           key={f.id}
-                          className={`text-xs px-3 py-1 rounded-full ${
+                          className={`text-xs px-3 py-1.5 rounded-full font-medium ${
                             f.tipo === "Passbolt"
                               ? "bg-[#FEF3C7] text-[#D97706]"
                               : "bg-[#F3F4F6] text-[#374151]"
@@ -95,7 +92,7 @@ export default function PerfisPage() {
                   )}
                 </div>
 
-                <p className="text-xs text-[#9CA3AF] mt-4 pt-4 border-t border-[#F3F4F6]">
+                <p className="text-xs text-[#9CA3AF] mt-4">
                   {perfil.ferramentaIds.length} ferramentas no pacote
                 </p>
               </div>

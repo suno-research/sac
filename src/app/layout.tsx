@@ -14,9 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <body className="bg-[#F9FAFB] font-sans antialiased">
         <Sidebar />
-        <div className="ml-64 flex flex-col min-h-screen">
+        <div style={{ marginLeft: "256px" }} className="flex flex-col min-h-screen">
           <Header />
-          <main className="flex-1 pt-16 px-8 py-8">
+          <main style={{ paddingTop: "64px" }} className="flex-1 p-8">
             {children}
           </main>
         </div>
