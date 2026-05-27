@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Mail, Building2, User, ExternalLink, ClipboardList } from "lucide-react";
+import { ArrowLeft, Calendar, Mail, Building2, User, ExternalLink, ClipboardList, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,8 +64,10 @@ function DetailSkeleton() {
 
 export default function FuncionarioDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
+  const [iniciandoOffboarding, setIniciandoOffboarding] = useState(false);
   const [funcionario, setFuncionario] = useState<Funcionario | null>(null);
   const [acessos, setAcessos] = useState<AcessoFuncionario[]>([]);
   const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
@@ -129,6 +131,47 @@ export default function FuncionarioDetailPage() {
   };
   acessos.forEach((a) => grupos[a.status]?.push(a));
 
+  async function iniciarOffboarding() {
+    if (!funcionario) return;
+    setIniciandoOffboarding(true);
+    try {
+      const hoje = new Date().toISOString().split("T")[0];
+      const offId = `off${Date.now()}`;
+
+      await fetch("/api/offboardings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: offId,
+          funcionarioId: funcionario.id,
+          dataDesligamento: hoje,
+          dataInicio: hoje,
+          dataConclusao: "",
+          status: "Em andamento",
+          responsavelId: "",
+        }),
+      });
+
+      await fetch("/api/acessos/update-batch", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ funcionarioId: funcionario.id, novoStatus: "Pendente remoção" }),
+      });
+
+      await fetch(`/api/funcionarios/${funcionario.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Desligado", dataDesligamento: hoje }),
+      });
+
+      router.push(`/offboarding/${offId}`);
+    } catch (e) {
+      console.error("Erro ao iniciar offboarding", e);
+    } finally {
+      setIniciandoOffboarding(false);
+    }
+  }
+
   const statsSummary = [
     { label: "Ativos", count: grupos["Ativo"].length, className: "text-success bg-success-muted" },
     {
@@ -187,8 +230,19 @@ export default function FuncionarioDetailPage() {
 
             <div className="flex items-center gap-3 flex-wrap">
               {funcionario.status === "Ativo" && !offboarding && (
-                <Button variant="destructive" size="default" className="gap-2">
-                  <ClipboardList className="h-4 w-4" /> Iniciar Offboarding
+                <Button
+                  variant="destructive"
+                  size="default"
+                  className="gap-2"
+                  onClick={iniciarOffboarding}
+                  disabled={iniciandoOffboarding}
+                >
+                  {iniciandoOffboarding ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ClipboardList className="h-4 w-4" />
+                  )}
+                  Iniciar Offboarding
                 </Button>
               )}
               {offboarding && offboarding.status === "Em andamento" && (

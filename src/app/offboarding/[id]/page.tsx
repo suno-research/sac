@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -70,8 +70,10 @@ function buildItensFromAcessos(
 
 export default function OffboardingPage() {
   const params = useParams();
+  const router = useRouter();
   const offboardingId = params.id as string;
 
+  const [concluindo, setConcluindo] = useState(false);
   const [offboarding, setOffboarding] = useState<OffboardingRecord | null>(null);
   const [funcionario, setFuncionario] = useState<Funcionario | null>(null);
   const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
@@ -144,6 +146,32 @@ export default function OffboardingPage() {
   const setObservacao = (itemId: string, obs: string) => {
     setItens((prev) => prev.map((i) => (i.id === itemId ? { ...i, observacao: obs } : i)));
   };
+
+  async function concluirOffboarding() {
+    if (!off || !func) return;
+    setConcluindo(true);
+    try {
+      const hoje = new Date().toISOString().split("T")[0];
+
+      await fetch("/api/acessos/concluir-offboarding", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ funcionarioId: func.id }),
+      });
+
+      await fetch("/api/offboardings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: off.id, status: "Concluído", dataConclusao: hoje }),
+      });
+
+      router.push(`/funcionarios/${func.id}`);
+    } catch (e) {
+      console.error("Erro ao concluir offboarding", e);
+    } finally {
+      setConcluindo(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -328,8 +356,16 @@ export default function OffboardingPage() {
 
       {off.status === "Em andamento" && (
         <div className="flex justify-end gap-3 flex-wrap">
-          <Button disabled={!concluido} className={concluido ? "bg-success hover:opacity-90" : ""}>
-            <CheckCircle2 className="h-4 w-4 mr-1.5" />
+          <Button
+            disabled={!concluido || concluindo}
+            onClick={concluirOffboarding}
+            className={concluido ? "bg-success hover:opacity-90" : ""}
+          >
+            {concluindo ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 mr-1.5" />
+            )}
             Concluir offboarding
           </Button>
           {!concluido && totalItens > 0 && (
