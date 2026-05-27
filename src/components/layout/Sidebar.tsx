@@ -1,8 +1,10 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { LayoutDashboard, Users, Wrench, Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -13,49 +15,57 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+
   return (
     <aside
-      style={{ width: "256px" }}
-      className="fixed inset-y-0 left-0 bg-[#111827] flex flex-col z-30"
+      className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-sidebar-border bg-sidebar"
+      style={{ width: "var(--sidebar-width)" }}
     >
-      <div className="px-6 py-7 border-b border-white/10">
-        <img src="/suno-logo.png" alt="Suno" className="h-8 w-auto" />
-        <p className="text-[#9CA3AF] text-[10px] mt-3 font-medium tracking-widest uppercase">
+      <div className="px-7 py-8 border-b border-sidebar-border">
+        <img src="/suno-logo.png" alt="Suno" className="h-9 w-auto brightness-0 opacity-90 dark:brightness-100 dark:invert dark:opacity-100" />
+        <p className="text-sidebar-muted text-[11px] mt-3 font-medium tracking-[0.12em] uppercase">
           Access Control
         </p>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-1.5">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150",
-                active
-                  ? "bg-[#D42126] text-white"
-                  : "text-[#9CA3AF] hover:bg-white/5 hover:text-white"
+            <Link key={href} href={href} className="block relative">
+              {active && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 rounded-xl bg-sidebar-active border-l-[3px] border-l-accent"
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                />
               )}
-            >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              {label}
+              <span
+                className={cn(
+                  "relative flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors duration-150",
+                  active
+                    ? "text-foreground"
+                    : "text-sidebar-foreground hover:text-foreground hover:bg-muted/60"
+                )}
+              >
+                <Icon className={cn("h-5 w-5 flex-shrink-0", active && "text-accent")} />
+                {label}
+              </span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-4 py-5 border-t border-white/10">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
-          <div className="h-8 w-8 rounded-full bg-[#D42126] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+      <div className="px-4 py-6 border-t border-sidebar-border">
+        <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer">
+          <div className="h-10 w-10 rounded-full bg-accent-muted text-accent flex items-center justify-center text-sm font-semibold flex-shrink-0">
             DL
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">Daniel Lopes</p>
-            <p className="text-[#9CA3AF] text-[11px] truncate">Coordenador de TI</p>
+            <p className="text-foreground text-sm font-medium truncate">Daniel Lopes</p>
+            <p className="text-sidebar-muted text-xs truncate mt-0.5">Coordenador de TI</p>
           </div>
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[#D42126]/20 text-[#F87171]">
+          <span className="text-[10px] font-semibold px-2 py-1 rounded-md bg-accent-muted text-accent">
             TI
           </span>
         </div>

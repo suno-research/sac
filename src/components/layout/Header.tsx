@@ -1,29 +1,49 @@
-import { Bell } from "lucide-react";
+"use client";
+
+import { Bell, Moon, Sun } from "lucide-react";
 import { countPendentesConcessao, countPendentesRemocao } from "@/lib/mock-data";
+import { useTheme } from "@/providers/theme-provider";
 
 const pendencias = countPendentesConcessao() + countPendentesRemocao();
 
 export function Header() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <header
-      style={{ left: "256px" }}
-      className="fixed top-0 right-0 z-20 h-16 bg-white border-b border-[#E5E7EB] flex items-center justify-between px-8"
+      className="fixed top-0 right-0 z-20 flex items-center justify-between px-8 xl:px-10 border-b border-border bg-card/80 backdrop-blur-md"
+      style={{
+        left: "var(--sidebar-width)",
+        height: "var(--header-height)",
+      }}
     >
       <div />
-      <div className="flex items-center gap-3">
-        <button className="relative p-2 rounded-xl text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827] transition-colors">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          aria-label={theme === "dark" ? "Modo claro" : "Modo escuro"}
+        >
+          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </button>
+        <button
+          type="button"
+          className="relative p-2.5 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          aria-label="Notificações"
+        >
           <Bell className="h-5 w-5" />
           {pendencias > 0 && (
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#D42126]" />
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-accent ring-2 ring-card" />
           )}
         </button>
-        <div className="flex items-center gap-2.5 pl-3 border-l border-[#E5E7EB]">
-          <div className="h-8 w-8 rounded-full bg-[#D42126] flex items-center justify-center text-white text-xs font-bold">
+        <div className="flex items-center gap-3 pl-4 ml-2 border-l border-border">
+          <div className="h-10 w-10 rounded-full bg-accent-muted text-accent flex items-center justify-center text-sm font-semibold">
             DL
           </div>
-          <div>
-            <p className="text-sm font-medium text-[#111827] leading-none">Daniel Lopes</p>
-            <p className="text-[11px] text-[#9CA3AF] mt-0.5">daniel.lopes@suno.com.br</p>
+          <div className="hidden sm:block">
+            <p className="text-sm font-medium text-foreground leading-tight">Daniel Lopes</p>
+            <p className="text-xs text-muted-foreground mt-0.5">daniel.lopes@suno.com.br</p>
           </div>
         </div>
       </div>

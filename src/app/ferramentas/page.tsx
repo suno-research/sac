@@ -1,15 +1,34 @@
 "use client";
+
 import { useState } from "react";
-import { Search, Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ferramentas, getTotalUsuariosAtivos } from "@/lib/mock-data";
 import type { CategoriaFerramenta, TipoAcesso } from "@/lib/mock-data";
-import { thFirst, thMid, thLast, tdName, tdMid, tdLast } from "@/lib/table-classes";
-
-const trClass = "border-b border-[#F9FAFB] hover:bg-[#FAFAFA] transition-colors";
+import {
+  thFirst,
+  thMid,
+  thLast,
+  tdName,
+  tdMid,
+  tdLast,
+  trHover,
+} from "@/lib/table-classes";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
+import { PageMotion } from "@/components/ui/page-motion";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const categorias: CategoriaFerramenta[] = [
   "Comunicação",
@@ -32,9 +51,6 @@ const emojiCategoria: Record<CategoriaFerramenta, string> = {
   Segurança: "🔐",
   Infraestrutura: "⚙️",
 };
-
-const selectClass =
-  "border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-[#374151] bg-white focus:outline-none focus:ring-2 focus:ring-[#D42126]/20 focus:border-[#D42126] cursor-pointer";
 
 export default function FerramentasPage() {
   const [busca, setBusca] = useState("");
@@ -61,73 +77,47 @@ export default function FerramentasPage() {
   const hasFilters = busca || categoria !== "todas" || tipo !== "todos";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-[#212121]">Ferramentas</h1>
-          <p className="text-sm text-[#9CA3AF] mt-1">
-            {ferramentas.length} ferramentas cadastradas
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setModalAberto(true)}
-          className="inline-flex items-center gap-2 bg-[#D42126] text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-[#B91C1C] transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Nova ferramenta
-        </button>
-      </div>
+    <PageMotion>
+      <PageHeader
+        title="Ferramentas"
+        description={`${ferramentas.length} ferramentas cadastradas`}
+        action={
+          <Button onClick={() => setModalAberto(true)}>
+            <Plus className="h-4 w-4" />
+            Nova ferramenta
+          </Button>
+        }
+      />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
-          <input
-            type="text"
-            placeholder="Buscar ferramenta..."
-            className="w-full border border-[#E5E7EB] rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D42126]/20 focus:border-[#D42126]"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-
-        <select
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          className={selectClass}
-        >
+      <FilterBar
+        searchPlaceholder="Buscar ferramenta..."
+        searchValue={busca}
+        onSearchChange={setBusca}
+        showClear={hasFilters}
+        onClear={() => {
+          setBusca("");
+          setCategoria("todas");
+          setTipo("todos");
+        }}
+      >
+        <FilterSelect value={categoria} onChange={setCategoria}>
           <option value="todas">Todas as categorias</option>
           {categorias.map((c) => (
             <option key={c} value={c}>
               {emojiCategoria[c]} {c}
             </option>
           ))}
-        </select>
-
-        <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={selectClass}>
+        </FilterSelect>
+        <FilterSelect value={tipo} onChange={setTipo}>
           <option value="todos">Todos os tipos</option>
           <option value="Individual">Individual</option>
           <option value="Passbolt">Passbolt</option>
-        </select>
+        </FilterSelect>
+      </FilterBar>
 
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={() => {
-              setBusca("");
-              setCategoria("todas");
-              setTipo("todos");
-            }}
-            className="text-sm font-medium text-[#6B7280] hover:text-[#111827]"
-          >
-            Limpar
-          </button>
-        )}
-      </div>
-
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-[#F9FAFB]">
+      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-muted/40">
             <tr>
               <th className={thFirst}>Nome</th>
               <th className={thMid}>Categoria</th>
@@ -139,7 +129,7 @@ export default function FerramentasPage() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="pl-8 pr-8 py-10 text-center text-sm text-[#9CA3AF]">
+                <td colSpan={5} className="pl-10 pr-10 py-14 text-center text-[15px] text-muted-foreground">
                   Nenhuma ferramenta encontrada.
                 </td>
               </tr>
@@ -147,45 +137,35 @@ export default function FerramentasPage() {
               filtered.map((f) => {
                 const ativos = getTotalUsuariosAtivos(f.id);
                 return (
-                  <tr key={f.id} className={trClass}>
+                  <tr key={f.id} className={trHover}>
                     <td className={tdName}>
-                      <div className="flex items-center">
-                        <span className="mr-3 text-base flex-shrink-0" aria-hidden>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xl flex-shrink-0" aria-hidden>
                           {emojiCategoria[f.categoria]}
                         </span>
-                        <div>
-                          <p className="text-sm font-semibold text-[#212121]">{f.nome}</p>
-                          <p className="text-xs text-[#9CA3AF] mt-0.5">{f.descricao}</p>
+                        <div className="space-y-1">
+                          <p className="font-medium text-foreground">{f.nome}</p>
+                          <p className="text-xs text-muted-foreground">{f.descricao}</p>
                         </div>
                       </div>
                     </td>
                     <td className={tdMid}>
-                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151] whitespace-nowrap">
-                        {f.categoria}
-                      </span>
+                      <Badge variant="secondary">{f.categoria}</Badge>
                     </td>
                     <td className={tdMid}>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${
-                          f.tipo === "Passbolt"
-                            ? "bg-[#FEF3C7] text-[#D97706]"
-                            : "bg-[#EFF6FF] text-[#3B82F6]"
-                        }`}
-                      >
-                        {f.tipo}
-                      </span>
+                      <Badge variant={f.tipo === "Passbolt" ? "warning" : "secondary"}>{f.tipo}</Badge>
                     </td>
-                    <td className="px-6 py-5 text-sm min-w-[200px]">
+                    <td className="px-8 py-6 text-[15px] min-w-[240px]">
                       <a
                         href={f.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#6B7280] hover:text-[#D42126] transition-colors"
+                        className="text-muted-foreground hover:text-accent transition-colors"
                       >
                         {f.url.replace("https://", "")}
                       </a>
                     </td>
-                    <td className={`${tdLast} text-right font-medium text-[#212121]`}>
+                    <td className={`${tdLast} text-right font-medium text-foreground tabular-nums`}>
                       {ativos}
                     </td>
                   </tr>
@@ -195,37 +175,36 @@ export default function FerramentasPage() {
           </tbody>
         </table>
         {filtered.length > 0 && (
-          <div className="pl-8 pr-8 py-4 border-t border-[#F3F4F6] text-xs text-[#6B7280]">
+          <div className="px-10 py-5 border-t border-border text-sm text-muted-foreground">
             Exibindo {filtered.length} de {ferramentas.length} ferramentas
           </div>
         )}
       </div>
 
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
-        <DialogContent className="max-w-[480px] rounded-2xl">
+        <DialogContent className="max-w-[520px]">
           <DialogHeader>
-            <DialogTitle className="text-[#111827]">Nova ferramenta</DialogTitle>
+            <DialogTitle>Nova ferramenta</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#6B7280]">Nome da ferramenta</Label>
+          <DialogBody className="space-y-5">
+            <div className="space-y-2">
+              <Label>Nome da ferramenta</Label>
               <Input
-                className="rounded-xl border-[#E5E7EB]"
                 placeholder="Ex: Jira"
                 value={novaFerramenta.nome}
                 onChange={(e) => setNovaFerramenta((p) => ({ ...p, nome: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-[#6B7280]">Categoria</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Categoria</Label>
                 <Select
                   value={novaFerramenta.categoria}
                   onValueChange={(v) =>
                     setNovaFerramenta((p) => ({ ...p, categoria: v as CategoriaFerramenta }))
                   }
                 >
-                  <SelectTrigger className="rounded-xl border-[#E5E7EB]">
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -237,15 +216,13 @@ export default function FerramentasPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-[#6B7280]">Tipo de acesso</Label>
+              <div className="space-y-2">
+                <Label>Tipo de acesso</Label>
                 <Select
                   value={novaFerramenta.tipo}
-                  onValueChange={(v) =>
-                    setNovaFerramenta((p) => ({ ...p, tipo: v as TipoAcesso }))
-                  }
+                  onValueChange={(v) => setNovaFerramenta((p) => ({ ...p, tipo: v as TipoAcesso }))}
                 >
-                  <SelectTrigger className="rounded-xl border-[#E5E7EB]">
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -255,35 +232,28 @@ export default function FerramentasPage() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#6B7280]">URL</Label>
+            <div className="space-y-2">
+              <Label>URL</Label>
               <Input
-                className="rounded-xl border-[#E5E7EB]"
                 placeholder="https://..."
                 value={novaFerramenta.url}
                 onChange={(e) => setNovaFerramenta((p) => ({ ...p, url: e.target.value }))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#6B7280]">Descrição</Label>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
               <Input
-                className="rounded-xl border-[#E5E7EB]"
                 placeholder="Descreva brevemente a ferramenta"
                 value={novaFerramenta.descricao}
                 onChange={(e) => setNovaFerramenta((p) => ({ ...p, descricao: e.target.value }))}
               />
             </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <button
-              type="button"
-              onClick={() => setModalAberto(false)}
-              className="rounded-lg border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB]"
-            >
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalAberto(false)}>
               Cancelar
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               disabled={
                 !novaFerramenta.nome ||
                 !novaFerramenta.categoria ||
@@ -294,13 +264,12 @@ export default function FerramentasPage() {
                 alert("Ferramenta cadastrada! (integração com backend pendente)");
                 setModalAberto(false);
               }}
-              className="bg-[#D42126] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#B91C1C] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cadastrar ferramenta
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageMotion>
   );
 }

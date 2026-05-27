@@ -1,10 +1,26 @@
 "use client";
+
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { funcionarios, getFuncionarioById } from "@/lib/mock-data";
 import type { AreaEmpresa } from "@/lib/mock-data";
-import { thFirst, thMid, thLast, tdName, tdCargo, tdMid, tdLast } from "@/lib/table-classes";
+import {
+  thFirst,
+  thMid,
+  thLast,
+  tdName,
+  tdCargo,
+  tdMid,
+  tdLast,
+  trHover,
+} from "@/lib/table-classes";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
+import { Avatar } from "@/components/ui/avatar";
+import { PageMotion } from "@/components/ui/page-motion";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const areas: AreaEmpresa[] = [
   "TI",
@@ -16,20 +32,6 @@ const areas: AreaEmpresa[] = [
   "Jurídico",
   "Operações",
 ];
-
-const trClass = "border-b border-[#F9FAFB] hover:bg-[#FAFAFA] transition-colors";
-
-function getInitials(nome: string) {
-  return nome
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-const selectClass =
-  "border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-[#374151] bg-white focus:outline-none focus:ring-2 focus:ring-[#D42126]/20 focus:border-[#D42126] cursor-pointer";
 
 export default function FuncionariosPage() {
   const [busca, setBusca] = useState("");
@@ -56,45 +58,41 @@ export default function FuncionariosPage() {
 
   const hasFilters = busca || area !== "todas" || status !== "todos" || gestor !== "todos";
 
+  const clearFilters = () => {
+    setBusca("");
+    setArea("todas");
+    setStatus("todos");
+    setGestor("todos");
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-[#212121]">Funcionários</h1>
-          <p className="text-sm text-[#9CA3AF] mt-1">
-            {funcionarios.length} funcionários cadastrados
-          </p>
-        </div>
-      </div>
+    <PageMotion>
+      <PageHeader
+        title="Funcionários"
+        description={`${funcionarios.length} funcionários cadastrados`}
+      />
 
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="relative min-w-[280px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou email..."
-            className="w-full border border-[#E5E7EB] rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D42126]/20 focus:border-[#D42126]"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-
-        <select value={area} onChange={(e) => setArea(e.target.value)} className={selectClass}>
+      <FilterBar
+        searchPlaceholder="Buscar por nome ou email..."
+        searchValue={busca}
+        onSearchChange={setBusca}
+        showClear={hasFilters}
+        onClear={clearFilters}
+      >
+        <FilterSelect value={area} onChange={setArea}>
           <option value="todas">Todas as áreas</option>
           {areas.map((a) => (
             <option key={a} value={a}>
               {a}
             </option>
           ))}
-        </select>
-
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
+        </FilterSelect>
+        <FilterSelect value={status} onChange={setStatus}>
           <option value="todos">Todos os status</option>
           <option value="Ativo">Ativo</option>
           <option value="Desligado">Desligado</option>
-        </select>
-
-        <select value={gestor} onChange={(e) => setGestor(e.target.value)} className={selectClass}>
+        </FilterSelect>
+        <FilterSelect value={gestor} onChange={setGestor}>
           <option value="todos">Todos os gestores</option>
           {gestores.map(
             (g) =>
@@ -104,30 +102,15 @@ export default function FuncionariosPage() {
                 </option>
               )
           )}
-        </select>
+        </FilterSelect>
+      </FilterBar>
 
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={() => {
-              setBusca("");
-              setArea("todas");
-              setStatus("todos");
-              setGestor("todos");
-            }}
-            className="text-sm font-medium text-[#6B7280] hover:text-[#212121]"
-          >
-            Limpar
-          </button>
-        )}
-      </div>
-
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-[#F9FAFB]">
+      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-muted/40">
             <tr>
               <th className={thFirst}>Nome</th>
-              <th className={`${thMid} min-w-[200px]`}>Cargo</th>
+              <th className={`${thMid} min-w-[220px]`}>Cargo</th>
               <th className={thMid}>Área</th>
               <th className={thMid}>Gestor</th>
               <th className={thMid}>Status</th>
@@ -138,56 +121,41 @@ export default function FuncionariosPage() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="pl-8 pr-8 py-10 text-center text-sm text-[#9CA3AF]">
+                <td colSpan={7} className="pl-10 pr-10 py-14 text-center text-[15px] text-muted-foreground">
                   Nenhum funcionário encontrado.
                 </td>
               </tr>
             ) : (
               filtered.map((func) => {
-                const gestorNome = func.gestorId
-                  ? getFuncionarioById(func.gestorId)?.nome
-                  : "—";
+                const gestorNome = func.gestorId ? getFuncionarioById(func.gestorId)?.nome : "—";
                 return (
-                  <tr key={func.id} className={trClass}>
+                  <tr key={func.id} className={trHover}>
                     <td className={tdName}>
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                          {getInitials(func.nome)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-[#212121]">{func.nome}</p>
-                          <p className="text-xs text-[#9CA3AF] mt-0.5">{func.email}</p>
+                        <Avatar name={func.nome} size="md" />
+                        <div className="space-y-1">
+                          <p className="font-medium text-foreground">{func.nome}</p>
+                          <p className="text-xs text-muted-foreground">{func.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className={`${tdCargo} text-[#374151]`}>{func.cargo}</td>
+                    <td className={tdCargo}>{func.cargo}</td>
                     <td className={tdMid}>
-                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151] whitespace-nowrap">
-                        {func.area}
-                      </span>
+                      <Badge variant="secondary">{func.area}</Badge>
                     </td>
-                    <td className={`${tdMid} text-[#6B7280]`}>{gestorNome}</td>
+                    <td className={tdMid}>{gestorNome}</td>
                     <td className={tdMid}>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${
-                          func.status === "Ativo"
-                            ? "bg-[#DCFCE7] text-[#16A34A]"
-                            : "bg-[#F3F4F6] text-[#6B7280]"
-                        }`}
-                      >
-                        {func.status}
-                      </span>
+                      <Badge variant={func.status === "Ativo" ? "success" : "muted"}>{func.status}</Badge>
                     </td>
-                    <td className={`${tdMid} text-[#6B7280]`}>
+                    <td className={tdMid}>
                       {new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR")}
                     </td>
                     <td className={`${tdLast} text-right`}>
-                      <Link
-                        href={`/funcionarios/${func.id}`}
-                        className="text-sm font-medium text-[#D42126] hover:underline whitespace-nowrap"
-                      >
-                        Ver acessos
-                      </Link>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/funcionarios/${func.id}`}>
+                          Ver acessos <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
                     </td>
                   </tr>
                 );
@@ -196,11 +164,11 @@ export default function FuncionariosPage() {
           </tbody>
         </table>
         {filtered.length > 0 && (
-          <div className="pl-8 pr-8 py-4 border-t border-[#F3F4F6] text-xs text-[#6B7280]">
+          <div className="px-10 py-5 border-t border-border text-sm text-muted-foreground">
             Exibindo {filtered.length} de {funcionarios.length} funcionários
           </div>
         )}
       </div>
-    </div>
+    </PageMotion>
   );
 }

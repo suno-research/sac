@@ -1,12 +1,25 @@
 "use client";
+
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { motion } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { perfisPadrao, ferramentas, getFerramentaById } from "@/lib/mock-data";
 import type { PerfilPadrao } from "@/lib/mock-data";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageMotion } from "@/components/ui/page-motion";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function PerfisPage() {
   const [perfis, setPerfis] = useState<PerfilPadrao[]>(perfisPadrao);
@@ -41,106 +54,98 @@ export default function PerfisPage() {
   }, {});
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#212121]">Perfis Padrão</h1>
-        <p className="text-sm text-[#9CA3AF] mt-1">
-          Pacotes de acesso pré-definidos por cargo. Usados no onboarding para agilizar a concessão
-          de ferramentas.
-        </p>
-      </div>
+    <PageMotion>
+      <PageHeader
+        title="Perfis Padrão"
+        description="Pacotes de acesso pré-definidos por cargo. Usados no onboarding para agilizar a concessão de ferramentas."
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {perfis.map((perfil) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {perfis.map((perfil, index) => {
           const ferrsDoPerfil = perfil.ferramentaIds.map(getFerramentaById).filter(Boolean);
 
           return (
-            <div key={perfil.id} className="h-auto shadow-sm">
-              <div className="bg-[#212121] rounded-t-2xl px-8 py-7 flex items-start justify-between gap-3">
+            <motion.article
+              key={perfil.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: index * 0.06 }}
+              className="rounded-xl border border-border bg-card shadow-card overflow-hidden flex flex-col hover:shadow-elevated transition-shadow duration-200"
+            >
+              <div className="px-8 py-7 border-b border-border flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-white text-xl font-bold">{perfil.cargo}</h2>
-                  <p className="text-[#9CA3AF] text-xs mt-1.5 font-medium tracking-wide uppercase">
+                  <h2 className="text-xl font-semibold text-foreground tracking-tight">{perfil.cargo}</h2>
+                  <Badge variant="secondary" className="mt-3">
                     {perfil.area}
-                  </p>
+                  </Badge>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => abrirEdicao(perfil)}
-                  className="flex items-center gap-1 text-[#9CA3AF] hover:text-white text-xs font-medium transition-colors shrink-0"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="sm" onClick={() => abrirEdicao(perfil)}>
+                  <Pencil className="h-4 w-4" />
                   Editar
-                </button>
+                </Button>
               </div>
 
-              <div className="bg-white rounded-b-2xl border border-[#E5E7EB] border-t-0 px-8 py-7">
-                <p className="leading-relaxed mb-6 text-sm text-[#6B7280]">{perfil.descricao}</p>
+              <div className="px-8 py-8 flex-1 flex flex-col">
+                <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">{perfil.descricao}</p>
 
-                <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                   Ferramentas incluídas
                 </p>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5 flex-1">
                   {ferrsDoPerfil.map(
                     (f) =>
                       f && (
-                        <span
+                        <Badge
                           key={f.id}
-                          className={
-                            f.tipo === "Passbolt"
-                              ? "px-4 py-2 rounded-full text-xs font-medium bg-[#FEF3C7] text-[#D97706]"
-                              : "px-4 py-2 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#4B4B4B]"
-                          }
+                          variant={f.tipo === "Passbolt" ? "warning" : "secondary"}
+                          className="text-xs px-3.5 py-1.5"
                         >
                           {f.nome}
-                        </span>
+                        </Badge>
                       )
                   )}
                 </div>
 
-                <p className="mt-6 pt-5 border-t border-[#F3F4F6] text-xs text-[#9CA3AF] font-medium">
+                <p className="mt-8 pt-6 border-t border-border text-sm text-muted-foreground font-medium">
                   {perfil.ferramentaIds.length} ferramentas no pacote
                 </p>
               </div>
-            </div>
+            </motion.article>
           );
         })}
       </div>
 
       <Dialog open={!!editando} onOpenChange={(open) => !open && setEditando(null)}>
-        <DialogContent className="max-w-[600px] max-h-[85vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="max-w-[640px]">
           <DialogHeader>
-            <DialogTitle className="text-[#212121]">Editar perfil — {editando?.cargo}</DialogTitle>
+            <DialogTitle>Editar perfil — {editando?.cargo}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-5 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#6B7280]">Cargo</Label>
+          <DialogBody className="space-y-6">
+            <div className="space-y-2">
+              <Label>Cargo</Label>
               <Input
-                className="rounded-xl border-[#E5E7EB] focus:ring-[#D42126]/20 focus:border-[#D42126]"
                 value={editando?.cargo ?? ""}
                 onChange={(e) => setEditando((p) => (p ? { ...p, cargo: e.target.value } : p))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#6B7280]">Descrição</Label>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
               <Input
-                className="rounded-xl border-[#E5E7EB] focus:ring-[#D42126]/20 focus:border-[#D42126]"
                 value={editando?.descricao ?? ""}
                 onChange={(e) => setEditando((p) => (p ? { ...p, descricao: e.target.value } : p))}
               />
             </div>
-            <div className="space-y-3">
-              <Label className="text-xs text-[#6B7280]">
-                Ferramentas incluídas ({ferramentasSelecionadas.length} selecionadas)
-              </Label>
+            <div className="space-y-4">
+              <Label>Ferramentas incluídas ({ferramentasSelecionadas.length} selecionadas)</Label>
               {Object.entries(ferramentasAgrupadas).map(([cat, ferrs]) => (
-                <div key={cat}>
-                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-2">
+                <div key={cat} className="rounded-xl border border-border p-5 bg-muted/30">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                     {cat}
                   </p>
-                  <div className="space-y-1.5 pl-1">
+                  <div className="space-y-3">
                     {ferrs.map((f) => (
-                      <div key={f.id} className="flex items-center gap-2">
+                      <div key={f.id} className="flex items-center gap-3">
                         <Checkbox
                           id={`edit-${f.id}`}
                           checked={ferramentasSelecionadas.includes(f.id)}
@@ -148,18 +153,12 @@ export default function PerfisPage() {
                         />
                         <label
                           htmlFor={`edit-${f.id}`}
-                          className="text-sm text-[#374151] cursor-pointer flex items-center gap-2"
+                          className="text-[15px] text-foreground cursor-pointer flex items-center gap-2.5 flex-1"
                         >
                           {f.nome}
-                          <span
-                            className={
-                              f.tipo === "Passbolt"
-                                ? "text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#D97706]"
-                                : "text-[10px] px-2 py-0.5 rounded-full bg-[#F3F4F6] text-[#4B4B4B]"
-                            }
-                          >
+                          <Badge variant={f.tipo === "Passbolt" ? "warning" : "secondary"} className="text-[10px]">
                             {f.tipo}
-                          </span>
+                          </Badge>
                         </label>
                       </div>
                     ))}
@@ -167,25 +166,15 @@ export default function PerfisPage() {
                 </div>
               ))}
             </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <button
-              type="button"
-              onClick={() => setEditando(null)}
-              className="rounded-lg border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB]"
-            >
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>
               Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={salvarEdicao}
-              className="bg-[#D42126] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#B91C1C]"
-            >
-              Salvar alterações
-            </button>
+            </Button>
+            <Button onClick={salvarEdicao}>Salvar alterações</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageMotion>
   );
 }
