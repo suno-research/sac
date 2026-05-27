@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSheetData } from "@/lib/sheets";
+import { getSheetData, appendSheetRow } from "@/lib/sheets";
 
 export async function GET() {
   try {
@@ -19,5 +19,28 @@ export async function GET() {
   } catch (error) {
     console.error("Erro ao buscar funcionários:", error);
     return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { nome, email, cargo, area, gestorId, dataEntrada } = body;
+
+    if (!nome || !email || !cargo || !area || !dataEntrada) {
+      return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
+    }
+
+    const id = `u${Date.now()}`;
+    const status = "Ativo";
+
+    await appendSheetRow("funcionarios!A:I", [
+      id, nome, email, cargo, area, gestorId || "", status, dataEntrada, "",
+    ]);
+
+    return NextResponse.json({ id, nome, email, cargo, area, gestorId, status, dataEntrada });
+  } catch (error) {
+    console.error("Erro ao criar funcionário:", error);
+    return NextResponse.json({ error: "Erro ao criar funcionário" }, { status: 500 });
   }
 }

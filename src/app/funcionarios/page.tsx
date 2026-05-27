@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ChevronRight } from "lucide-react";
@@ -46,6 +47,7 @@ function TableSkeleton() {
 export default function FuncionariosPage() {
   const { data: session } = useSession();
   const isGestor = session?.user?.role === "gestor";
+  const router = useRouter();
   const userEmail = session?.user?.email || "";
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
@@ -123,6 +125,17 @@ export default function FuncionariosPage() {
           isGestor
             ? `${funcionarios.length} membros do seu time`
             : `${funcionarios.length} funcionários cadastrados`
+        }
+        action={
+          !isGestor ? (
+            <Button
+              onClick={() => router.push("/funcionarios/novo")}
+              style={{ background: "#D42126", color: "white" }}
+              className="gap-2"
+            >
+              + Novo Funcionário
+            </Button>
+          ) : undefined
         }
       />
 
