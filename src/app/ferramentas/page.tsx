@@ -1,194 +1,260 @@
 "use client";
 import { useState } from "react";
-import { Search, Plus, ExternalLink } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ferramentas, getTotalUsuariosAtivos } from "@/lib/mock-data";
 import type { CategoriaFerramenta, TipoAcesso } from "@/lib/mock-data";
 
 const categorias: CategoriaFerramenta[] = [
-  "Comunicação", "Analytics", "Desenvolvimento", "Financeiro",
-  "Marketing", "Produtividade", "Segurança", "Infraestrutura",
+  "Comunicação",
+  "Analytics",
+  "Desenvolvimento",
+  "Financeiro",
+  "Marketing",
+  "Produtividade",
+  "Segurança",
+  "Infraestrutura",
 ];
 
-const categoriaCores: Record<CategoriaFerramenta, string> = {
-  "Comunicação": "bg-blue-100 text-blue-700",
-  "Analytics": "bg-purple-100 text-purple-700",
-  "Desenvolvimento": "bg-gray-100 text-gray-700",
-  "Financeiro": "bg-green-100 text-green-700",
-  "Marketing": "bg-pink-100 text-pink-700",
-  "Produtividade": "bg-orange-100 text-orange-700",
-  "Segurança": "bg-red-100 text-red-700",
-  "Infraestrutura": "bg-indigo-100 text-indigo-700",
+const emojiCategoria: Record<CategoriaFerramenta, string> = {
+  Produtividade: "📋",
+  Analytics: "📊",
+  Desenvolvimento: "💻",
+  Financeiro: "💰",
+  Marketing: "📣",
+  Comunicação: "💬",
+  Segurança: "🔐",
+  Infraestrutura: "⚙️",
 };
+
+const selectClass =
+  "border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-[#374151] bg-white focus:outline-none focus:ring-2 focus:ring-[#D42126]/20 focus:border-[#D42126] cursor-pointer";
 
 export default function FerramentasPage() {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<string>("todas");
   const [tipo, setTipo] = useState<string>("todos");
   const [modalAberto, setModalAberto] = useState(false);
-  const [novaFerramenta, setNovaFerramenta] = useState({ nome: "", categoria: "" as CategoriaFerramenta | "", tipo: "" as TipoAcesso | "", url: "", descricao: "" });
+  const [novaFerramenta, setNovaFerramenta] = useState({
+    nome: "",
+    categoria: "" as CategoriaFerramenta | "",
+    tipo: "" as TipoAcesso | "",
+    url: "",
+    descricao: "",
+  });
 
   const filtered = ferramentas.filter((f) => {
-    const matchBusca = f.nome.toLowerCase().includes(busca.toLowerCase()) || f.descricao.toLowerCase().includes(busca.toLowerCase());
+    const matchBusca =
+      f.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      f.descricao.toLowerCase().includes(busca.toLowerCase());
     const matchCategoria = categoria === "todas" || f.categoria === categoria;
     const matchTipo = tipo === "todos" || f.tipo === tipo;
     return matchBusca && matchCategoria && matchTipo;
   });
 
+  const hasFilters = busca || categoria !== "todas" || tipo !== "todos";
+
   return (
-    <div className="p-6 space-y-5 max-w-[1280px]">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-[1280px]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Ferramentas</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{ferramentas.length} ferramentas cadastradas</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Ferramentas</h1>
+          <p className="text-sm text-[#6B7280] mt-1">
+            {ferramentas.length} ferramentas cadastradas
+          </p>
         </div>
-        <Button onClick={() => setModalAberto(true)} className="gap-1.5">
-          <Plus className="h-4 w-4" /> Nova ferramenta
-        </Button>
+        <button
+          type="button"
+          onClick={() => setModalAberto(true)}
+          className="inline-flex items-center gap-2 bg-[#D42126] text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-[#B91C1C] transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Nova ferramenta
+        </button>
       </div>
 
-      {/* Filtros */}
-      <Card>
-        <CardContent className="pt-4 pb-4">
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar ferramenta..."
-                className="pl-9"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-              />
-            </div>
-            <Select value={categoria} onValueChange={setCategoria}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas as categorias</SelectItem>
-                {categorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={tipo} onValueChange={setTipo}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os tipos</SelectItem>
-                <SelectItem value="Individual">Individual</SelectItem>
-                <SelectItem value="Passbolt">Passbolt</SelectItem>
-              </SelectContent>
-            </Select>
-            {(busca || categoria !== "todas" || tipo !== "todos") && (
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600"
-                onClick={() => { setBusca(""); setCategoria("todas"); setTipo("todos"); }}>
-                Limpar filtros
-              </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
+          <input
+            type="text"
+            placeholder="Buscar ferramenta..."
+            className="w-full border border-[#E5E7EB] rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D42126]/20 focus:border-[#D42126]"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
+
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className={selectClass}
+        >
+          <option value="todas">Todas as categorias</option>
+          {categorias.map((c) => (
+            <option key={c} value={c}>
+              {emojiCategoria[c]} {c}
+            </option>
+          ))}
+        </select>
+
+        <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={selectClass}>
+          <option value="todos">Todos os tipos</option>
+          <option value="Individual">Individual</option>
+          <option value="Passbolt">Passbolt</option>
+        </select>
+
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => {
+              setBusca("");
+              setCategoria("todas");
+              setTipo("todos");
+            }}
+            className="text-sm font-medium text-[#6B7280] hover:text-[#111827]"
+          >
+            Limpar
+          </button>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-[#F9FAFB]">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                Nome
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                Categoria
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                Tipo de acesso
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                URL
+              </th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                Usuários ativos
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#F3F4F6]">
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-10 text-center text-sm text-[#9CA3AF]">
+                  Nenhuma ferramenta encontrada.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((f) => {
+                const ativos = getTotalUsuariosAtivos(f.id);
+                return (
+                  <tr key={f.id} className="hover:bg-[#F9FAFB] transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base" aria-hidden>
+                          {emojiCategoria[f.categoria]}
+                        </span>
+                        <div>
+                          <p className="font-medium text-[#111827]">{f.nome}</p>
+                          <p className="text-xs text-[#9CA3AF]">{f.descricao}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151]">
+                        {f.categoria}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          f.tipo === "Passbolt"
+                            ? "bg-[#FEF3C7] text-[#D97706]"
+                            : "bg-[#EFF6FF] text-[#3B82F6]"
+                        }`}
+                      >
+                        {f.tipo}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <a
+                        href={f.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#6B7280] hover:text-[#D42126] transition-colors"
+                      >
+                        {f.url.replace("https://", "")}
+                      </a>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="font-medium text-[#111827]">{ativos}</span>
+                    </td>
+                  </tr>
+                );
+              })
             )}
+          </tbody>
+        </table>
+        {filtered.length > 0 && (
+          <div className="px-6 py-3 border-t border-[#F3F4F6] text-xs text-[#6B7280]">
+            Exibindo {filtered.length} de {ferramentas.length} ferramentas
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      {/* Tabela */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#DDDDDD]">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Nome</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Categoria</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Tipo de acesso</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">URL</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wide">Usuários ativos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-10 text-center text-sm text-gray-400">Nenhuma ferramenta encontrada.</td></tr>
-                ) : (
-                  filtered.map((f) => {
-                    const ativos = getTotalUsuariosAtivos(f.id);
-                    return (
-                      <tr key={f.id} className="border-b border-[#DDDDDD]/50 last:border-0 hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-3">
-                          <p className="font-medium text-gray-900">{f.nome}</p>
-                          <p className="text-xs text-gray-400">{f.descricao}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${categoriaCores[f.categoria]}`}>
-                            {f.categoria}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={f.tipo === "Passbolt" ? "warning" : "secondary"}>
-                            {f.tipo}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <a
-                            href={f.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-[#D42126] hover:underline"
-                          >
-                            {f.url.replace("https://", "")} <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="inline-flex items-center justify-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                            {ativos}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          {filtered.length > 0 && (
-            <div className="px-6 py-3 border-t border-[#DDDDDD] text-xs text-gray-400">
-              Exibindo {filtered.length} de {ferramentas.length} ferramentas
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Modal Nova Ferramenta */}
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
-        <DialogContent className="max-w-[480px]">
+        <DialogContent className="max-w-[480px] rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Nova ferramenta</DialogTitle>
+            <DialogTitle className="text-[#111827]">Nova ferramenta</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>Nome da ferramenta</Label>
-              <Input placeholder="Ex: Jira" value={novaFerramenta.nome}
-                onChange={(e) => setNovaFerramenta((p) => ({ ...p, nome: e.target.value }))} />
+              <Label className="text-xs text-[#6B7280]">Nome da ferramenta</Label>
+              <Input
+                className="rounded-xl border-[#E5E7EB]"
+                placeholder="Ex: Jira"
+                value={novaFerramenta.nome}
+                onChange={(e) => setNovaFerramenta((p) => ({ ...p, nome: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Categoria</Label>
-                <Select value={novaFerramenta.categoria}
-                  onValueChange={(v) => setNovaFerramenta((p) => ({ ...p, categoria: v as CategoriaFerramenta }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <Label className="text-xs text-[#6B7280]">Categoria</Label>
+                <Select
+                  value={novaFerramenta.categoria}
+                  onValueChange={(v) =>
+                    setNovaFerramenta((p) => ({ ...p, categoria: v as CategoriaFerramenta }))
+                  }
+                >
+                  <SelectTrigger className="rounded-xl border-[#E5E7EB]">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {categorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {categorias.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {emojiCategoria[c]} {c}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Tipo de acesso</Label>
-                <Select value={novaFerramenta.tipo}
-                  onValueChange={(v) => setNovaFerramenta((p) => ({ ...p, tipo: v as TipoAcesso }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <Label className="text-xs text-[#6B7280]">Tipo de acesso</Label>
+                <Select
+                  value={novaFerramenta.tipo}
+                  onValueChange={(v) =>
+                    setNovaFerramenta((p) => ({ ...p, tipo: v as TipoAcesso }))
+                  }
+                >
+                  <SelectTrigger className="rounded-xl border-[#E5E7EB]">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Individual">Individual</SelectItem>
                     <SelectItem value="Passbolt">Passbolt</SelectItem>
@@ -197,24 +263,48 @@ export default function FerramentasPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>URL</Label>
-              <Input placeholder="https://..." value={novaFerramenta.url}
-                onChange={(e) => setNovaFerramenta((p) => ({ ...p, url: e.target.value }))} />
+              <Label className="text-xs text-[#6B7280]">URL</Label>
+              <Input
+                className="rounded-xl border-[#E5E7EB]"
+                placeholder="https://..."
+                value={novaFerramenta.url}
+                onChange={(e) => setNovaFerramenta((p) => ({ ...p, url: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Descrição</Label>
-              <Input placeholder="Descreva brevemente a ferramenta" value={novaFerramenta.descricao}
-                onChange={(e) => setNovaFerramenta((p) => ({ ...p, descricao: e.target.value }))} />
+              <Label className="text-xs text-[#6B7280]">Descrição</Label>
+              <Input
+                className="rounded-xl border-[#E5E7EB]"
+                placeholder="Descreva brevemente a ferramenta"
+                value={novaFerramenta.descricao}
+                onChange={(e) => setNovaFerramenta((p) => ({ ...p, descricao: e.target.value }))}
+              />
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModalAberto(false)}>Cancelar</Button>
-            <Button
-              disabled={!novaFerramenta.nome || !novaFerramenta.categoria || !novaFerramenta.tipo || !novaFerramenta.url}
-              onClick={() => { alert("Ferramenta cadastrada! (integração com backend pendente)"); setModalAberto(false); }}
+            <button
+              type="button"
+              onClick={() => setModalAberto(false)}
+              className="rounded-lg border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={
+                !novaFerramenta.nome ||
+                !novaFerramenta.categoria ||
+                !novaFerramenta.tipo ||
+                !novaFerramenta.url
+              }
+              onClick={() => {
+                alert("Ferramenta cadastrada! (integração com backend pendente)");
+                setModalAberto(false);
+              }}
+              className="bg-[#D42126] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#B91C1C] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cadastrar ferramenta
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

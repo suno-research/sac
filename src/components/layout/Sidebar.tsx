@@ -5,30 +5,29 @@ import { cn } from "@/lib/utils";
 import { LayoutDashboard, Users, Wrench, Shield } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard",    label: "Dashboard",    icon: LayoutDashboard },
-  { href: "/funcionarios", label: "Funcionários", icon: Users           },
-  { href: "/ferramentas",  label: "Ferramentas",  icon: Wrench          },
-  { href: "/perfis",       label: "Perfis Padrão",icon: Shield          },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/funcionarios", label: "Funcionários", icon: Users },
+  { href: "/ferramentas", label: "Ferramentas", icon: Wrench },
+  { href: "/perfis", label: "Perfis Padrão", icon: Shield },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-
   return (
-    <aside className="flex h-screen w-60 flex-col bg-[#0f172a] fixed left-0 top-0 z-30">
-      {/* Logo */}
-      <div className="flex flex-col px-6 py-6 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D42126]">
+    <aside className="fixed inset-y-0 left-0 w-64 bg-[#111827] flex flex-col z-30">
+      <div className="px-6 py-6 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-[#D42126] flex items-center justify-center flex-shrink-0">
             <Shield className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xl font-bold text-white">SAC</span>
+          <div>
+            <p className="text-white font-bold text-lg leading-none">SAC</p>
+            <p className="text-[#9CA3AF] text-[11px] mt-0.5">Suno Access Control</p>
+          </div>
         </div>
-        <p className="mt-1.5 text-xs text-slate-400 leading-tight">Suno Access Control</p>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -36,22 +35,30 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
                 active
                   ? "bg-[#D42126] text-white"
-                  : "text-slate-400 hover:bg-white/10 hover:text-white"
+                  : "text-[#9CA3AF] hover:bg-white/5 hover:text-white"
               )}
             >
-              <Icon className={cn("h-4 w-4 flex-shrink-0", active ? "text-white" : "text-slate-400")} />
-              <span className="flex-1">{label}</span>
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              {label}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-6 py-4 border-t border-white/10">
-        <p className="text-[10px] text-slate-500">v1.0.0 · Suno Research</p>
+      <div className="px-3 py-4 border-t border-white/10">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
+          <div className="h-8 w-8 rounded-full bg-[#D42126] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            DL
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">Daniel Lopes</p>
+            <p className="text-[#9CA3AF] text-[11px] truncate">Coordenador de TI</p>
+          </div>
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[#D42126]/20 text-[#F87171]">TI</span>
+        </div>
       </div>
     </aside>
   );
