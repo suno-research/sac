@@ -20,17 +20,14 @@ export function Sidebar() {
     >
       <div className="px-6 py-6 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-[#D42126] flex items-center justify-center flex-shrink-0">
-            <Shield className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-lg leading-none">SAC</p>
-            <p className="text-[#9CA3AF] text-[11px] mt-0.5">Suno Access Control</p>
-          </div>
+          <img src="/suno-logo.svg" alt="Suno" className="h-7 w-auto" />
         </div>
+        <p className="text-[#9CA3AF] text-[11px] mt-3 font-medium tracking-wider uppercase">
+          Access Control
+        </p>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -38,7 +35,7 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150",
                 active
                   ? "bg-[#D42126] text-white"
                   : "text-[#9CA3AF] hover:bg-white/5 hover:text-white"
@@ -51,8 +48,8 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
+      <div className="px-4 py-5 border-t border-white/10">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
           <div className="h-8 w-8 rounded-full bg-[#D42126] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
             DL
           </div>
@@ -60,7 +57,9 @@ export function Sidebar() {
             <p className="text-white text-sm font-medium truncate">Daniel Lopes</p>
             <p className="text-[#9CA3AF] text-[11px] truncate">Coordenador de TI</p>
           </div>
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[#D42126]/20 text-[#F87171]">TI</span>
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[#D42126]/20 text-[#F87171]">
+            TI
+          </span>
         </div>
       </div>
     </aside>

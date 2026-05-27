@@ -81,9 +81,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-[#111827]">Dashboard</h1>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-[#111827]">Dashboard</h1>
         <p className="text-sm text-[#6B7280] mt-1">Visão geral do controle de acessos da Suno</p>
       </div>
 
@@ -94,11 +94,11 @@ export default function DashboardPage() {
             className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8 min-h-[120px]"
           >
             <div className="flex items-start justify-end">
-              <div className={`p-2.5 rounded-xl ${kpi.iconBg}`}>
+              <div className={`p-3 rounded-2xl ${kpi.iconBg}`}>
                 <kpi.icon className={`h-5 w-5 ${kpi.iconColor}`} />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#111827] mt-4">{kpi.value}</p>
+            <p className="text-4xl font-bold text-[#111827] mt-6">{kpi.value}</p>
             <p className="text-sm text-[#6B7280] mt-1">{kpi.label}</p>
           </div>
         ))}
@@ -111,7 +111,7 @@ export default function DashboardPage() {
             return (
               <div
                 key={o.id}
-                className="bg-[#FEF2F2] border border-[#FECACA] border-l-4 border-l-[#D42126] rounded-2xl p-4"
+                className="bg-[#FEF2F2] border border-[#FECACA] border-l-4 border-l-[#D42126] rounded-2xl p-5"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#F3F4F6] flex justify-between items-center">
+          <div className="px-8 py-5 border-b border-[#F3F4F6] flex justify-between items-center">
             <h2 className="text-base font-semibold text-[#111827]">Últimas movimentações</h2>
             <Link href="/funcionarios" className="text-sm font-medium text-[#D42126] hover:underline">
               Ver todos
@@ -148,16 +148,16 @@ export default function DashboardPage() {
           <table className="w-full text-sm">
             <thead className="bg-[#F9FAFB]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Funcionário
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Tipo
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Data
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -167,17 +167,17 @@ export default function DashboardPage() {
                 const func = getFuncionarioById(mov.funcionarioId);
                 return (
                   <tr key={mov.id} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         {func && (
-                          <div className="h-8 w-8 rounded-full bg-[#D42126] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                             {getInitials(func.nome)}
                           </div>
                         )}
                         <span className="font-medium text-[#111827]">{func?.nome ?? "—"}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-8 py-5">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           mov.tipo === "onboarding"
@@ -188,10 +188,10 @@ export default function DashboardPage() {
                         {mov.tipo === "onboarding" ? "Onboarding" : "Offboarding"}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-[#6B7280]">
+                    <td className="px-8 py-5 text-[#6B7280]">
                       {new Date(mov.data + "T00:00:00").toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-8 py-5">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           statusBadge[mov.status] ?? "bg-[#F3F4F6] text-[#6B7280]"
@@ -208,7 +208,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#F3F4F6] flex justify-between items-center">
+          <div className="px-8 py-5 border-b border-[#F3F4F6] flex justify-between items-center">
             <h2 className="text-base font-semibold text-[#111827]">Pendências de acesso</h2>
             <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#FEF3C7] text-[#D97706]">
               {pendentesConcessao + pendentesRemocao} itens
@@ -217,13 +217,13 @@ export default function DashboardPage() {
           <table className="w-full text-sm">
             <thead className="bg-[#F9FAFB]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Funcionário
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Área
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Ação
                 </th>
               </tr>
@@ -240,10 +240,10 @@ export default function DashboardPage() {
                   const func = getFuncionarioById(p.funcionarioId);
                   return (
                     <tr key={p.funcionarioId} className="hover:bg-[#F9FAFB] transition-colors">
-                      <td className="px-6 py-4">
+                      <td className="px-8 py-5">
                         <div className="flex items-center gap-3">
                           {func && (
-                            <div className="h-8 w-8 rounded-full bg-[#D42126] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                            <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                               {getInitials(func.nome)}
                             </div>
                           )}
@@ -253,8 +253,8 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-[#6B7280]">{func?.area}</td>
-                      <td className="px-4 py-4">
+                      <td className="px-8 py-5 text-[#6B7280]">{func?.area}</td>
+                      <td className="px-8 py-5">
                         <Link
                           href={`/funcionarios/${p.funcionarioId}`}
                           className="text-sm font-medium text-[#D42126] hover:underline"
@@ -272,7 +272,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#F3F4F6] flex justify-between items-center">
+        <div className="px-8 py-5 border-b border-[#F3F4F6] flex justify-between items-center">
           <h2 className="text-base font-semibold text-[#111827]">Funcionários</h2>
           <Link href="/funcionarios" className="text-sm font-medium text-[#D42126] hover:underline">
             Ver todos
@@ -281,27 +281,27 @@ export default function DashboardPage() {
         <table className="w-full text-sm">
           <thead className="bg-[#F9FAFB]">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                 Nome
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                 Cargo
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                 Área
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3" />
+              <th className="px-8 py-4" />
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F3F4F6]">
             {funcionarios.slice(0, 6).map((func) => (
               <tr key={func.id} className="hover:bg-[#F9FAFB] transition-colors">
-                <td className="px-6 py-4">
+                <td className="px-8 py-5">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-[#D42126] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                       {getInitials(func.nome)}
                     </div>
                     <div>
@@ -310,9 +310,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-4 text-[#374151]">{func.cargo}</td>
-                <td className="px-4 py-4 text-[#6B7280]">{func.area}</td>
-                <td className="px-4 py-4">
+                <td className="px-8 py-5 text-[#374151]">{func.cargo}</td>
+                <td className="px-8 py-5 text-[#6B7280]">{func.area}</td>
+                <td className="px-8 py-5">
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       func.status === "Ativo"
@@ -323,7 +323,7 @@ export default function DashboardPage() {
                     {func.status}
                   </span>
                 </td>
-                <td className="px-4 py-4 text-right">
+                <td className="px-8 py-5 text-right">
                   <Link
                     href={`/funcionarios/${func.id}`}
                     className="text-sm font-medium text-[#D42126] hover:underline"

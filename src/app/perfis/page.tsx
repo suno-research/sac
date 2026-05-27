@@ -41,7 +41,7 @@ export default function PerfisPage() {
   }, {});
 
   return (
-    <div className="space-y-8 max-w-[1100px]">
+    <div className="space-y-8 max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-[#111827]">Perfis Padrão</h1>
         <p className="text-sm text-[#6B7280] mt-1">
@@ -56,10 +56,12 @@ export default function PerfisPage() {
 
           return (
             <div key={perfil.id} className="h-auto shadow-sm">
-              <div className="bg-[#111827] rounded-t-2xl px-6 py-5 flex items-start justify-between gap-3">
+              <div className="bg-[#111827] rounded-t-2xl px-8 py-7 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-white text-lg font-semibold">{perfil.cargo}</h2>
-                  <p className="text-[#9CA3AF] text-xs mt-1">{perfil.area}</p>
+                  <h2 className="text-white text-xl font-bold">{perfil.cargo}</h2>
+                  <p className="text-[#9CA3AF] text-xs mt-1.5 font-medium tracking-wide uppercase">
+                    {perfil.area}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -71,8 +73,12 @@ export default function PerfisPage() {
                 </button>
               </div>
 
-              <div className="bg-white border border-[#E5E7EB] border-t-0 rounded-b-2xl px-6 py-5 h-auto">
-                <p className="text-sm text-[#6B7280] mb-4">{perfil.descricao}</p>
+              <div className="bg-white border border-[#E5E7EB] border-t-0 rounded-b-2xl px-8 py-6 h-auto">
+                <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">{perfil.descricao}</p>
+
+                <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3">
+                  Ferramentas incluídas
+                </p>
 
                 <div className="flex flex-wrap gap-2">
                   {ferrsDoPerfil.map(
@@ -80,7 +86,7 @@ export default function PerfisPage() {
                       f && (
                         <span
                           key={f.id}
-                          className={`text-xs px-3 py-1.5 rounded-full font-medium ${
+                          className={`text-xs px-4 py-2 rounded-full font-medium ${
                             f.tipo === "Passbolt"
                               ? "bg-[#FEF3C7] text-[#D97706]"
                               : "bg-[#F3F4F6] text-[#374151]"
@@ -92,7 +98,7 @@ export default function PerfisPage() {
                   )}
                 </div>
 
-                <p className="text-xs text-[#9CA3AF] mt-4">
+                <p className="text-xs text-[#9CA3AF] font-medium mt-6 pt-4 border-t border-[#F3F4F6]">
                   {perfil.ferramentaIds.length} ferramentas no pacote
                 </p>
               </div>
