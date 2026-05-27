@@ -41,10 +41,10 @@ export default function PerfisPage() {
   }, {});
 
   return (
-    <div className="space-y-8 w-full">
-      <div>
-        <h1 className="text-2xl font-bold text-[#111827]">Perfis Padrão</h1>
-        <p className="text-sm text-[#6B7280] mt-1">
+    <div className="space-y-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-[#212121]">Perfis Padrão</h1>
+        <p className="text-sm text-[#9CA3AF] mt-1">
           Pacotes de acesso pré-definidos por cargo. Usados no onboarding para agilizar a concessão
           de ferramentas.
         </p>
@@ -56,7 +56,7 @@ export default function PerfisPage() {
 
           return (
             <div key={perfil.id} className="h-auto shadow-sm">
-              <div className="bg-[#111827] rounded-t-2xl px-8 py-8 flex items-start justify-between gap-3">
+              <div className="bg-[#212121] rounded-t-2xl px-8 py-7 flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-white text-xl font-bold">{perfil.cargo}</h2>
                   <p className="text-[#9CA3AF] text-xs mt-1.5 font-medium tracking-wide uppercase">
@@ -73,24 +73,24 @@ export default function PerfisPage() {
                 </button>
               </div>
 
-              <div className="bg-white border border-[#E5E7EB] border-t-0 rounded-b-2xl px-8 py-8 h-auto">
-                <p className="mb-6 leading-relaxed text-sm text-[#6B7280]">{perfil.descricao}</p>
+              <div className="bg-white rounded-b-2xl border border-[#E5E7EB] border-t-0 px-8 py-7">
+                <p className="leading-relaxed mb-6 text-sm text-[#6B7280]">{perfil.descricao}</p>
 
-                <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">
+                <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">
                   Ferramentas incluídas
                 </p>
 
-                <div className="flex flex-wrap gap-2 mt-1">
+                <div className="flex flex-wrap gap-2">
                   {ferrsDoPerfil.map(
                     (f) =>
                       f && (
                         <span
                           key={f.id}
-                          className={`px-4 py-2 rounded-full text-xs font-medium ${
+                          className={
                             f.tipo === "Passbolt"
-                              ? "bg-[#FEF3C7] text-[#D97706]"
-                              : "bg-[#F3F4F6] text-[#374151]"
-                          }`}
+                              ? "px-4 py-2 rounded-full text-xs font-medium bg-[#FEF3C7] text-[#D97706]"
+                              : "px-4 py-2 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#4B4B4B]"
+                          }
                         >
                           {f.nome}
                         </span>
@@ -98,7 +98,7 @@ export default function PerfisPage() {
                   )}
                 </div>
 
-                <p className="text-xs text-[#9CA3AF] font-medium mt-6 pt-4 border-t border-[#F3F4F6]">
+                <p className="mt-6 pt-5 border-t border-[#F3F4F6] text-xs text-[#9CA3AF] font-medium">
                   {perfil.ferramentaIds.length} ferramentas no pacote
                 </p>
               </div>
@@ -110,7 +110,7 @@ export default function PerfisPage() {
       <Dialog open={!!editando} onOpenChange={(open) => !open && setEditando(null)}>
         <DialogContent className="max-w-[600px] max-h-[85vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-[#111827]">Editar perfil — {editando?.cargo}</DialogTitle>
+            <DialogTitle className="text-[#212121]">Editar perfil — {editando?.cargo}</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-1.5">
@@ -152,11 +152,11 @@ export default function PerfisPage() {
                         >
                           {f.nome}
                           <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full ${
+                            className={
                               f.tipo === "Passbolt"
-                                ? "bg-[#FEF3C7] text-[#D97706]"
-                                : "bg-[#F3F4F6] text-[#374151]"
-                            }`}
+                                ? "text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#D97706]"
+                                : "text-[10px] px-2 py-0.5 rounded-full bg-[#F3F4F6] text-[#4B4B4B]"
+                            }
                           >
                             {f.tipo}
                           </span>

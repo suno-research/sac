@@ -18,9 +18,9 @@ export function Sidebar() {
       style={{ width: "256px" }}
       className="fixed inset-y-0 left-0 bg-[#111827] flex flex-col z-30"
     >
-      <div className="px-6 py-6 border-b border-white/10">
-        <img src="/suno-logo.svg" alt="Suno" className="h-6 w-auto" />
-        <p className="text-[#9CA3AF] text-[10px] tracking-widest uppercase mt-2">
+      <div className="px-6 py-7 border-b border-white/10">
+        <img src="/suno-logo.png" alt="Suno" className="h-8 w-auto" />
+        <p className="text-[#9CA3AF] text-[10px] mt-3 font-medium tracking-widest uppercase">
           Access Control
         </p>
       </div>

@@ -16,8 +16,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Sidebar />
         <div style={{ marginLeft: "256px" }} className="flex flex-col min-h-screen">
           <Header />
-          <main style={{ paddingTop: "84px" }} className="flex-1 px-10 pb-10">
-            <div className="max-w-screen-xl mx-auto w-full">{children}</div>
+          <main style={{ paddingTop: "80px" }} className="flex-1 px-12 pb-12">
+            <div className="max-w-6xl mx-auto w-full pt-8">{children}</div>
           </main>
         </div>
       </body>
