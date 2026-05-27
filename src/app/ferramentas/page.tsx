@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import {
   Dialog,
@@ -13,8 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ferramentas, getTotalUsuariosAtivos } from "@/lib/mock-data";
-import type { CategoriaFerramenta, TipoAcesso } from "@/lib/mock-data";
+import type { CategoriaFerramenta, TipoAcesso, Ferramenta, AcessoFuncionario } from "@/lib/mock-data";
 import {
   thFirst,
   thMid,
@@ -52,7 +51,20 @@ const emojiCategoria: Record<CategoriaFerramenta, string> = {
   Infraestrutura: "⚙️",
 };
 
+function TableSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden p-6 space-y-3">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} style={{ height: 48, background: "#F3F4F6", borderRadius: 8 }} />
+      ))}
+    </div>
+  );
+}
+
 export default function FerramentasPage() {
+  const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
+  const [acessos, setAcessos] = useState<AcessoFuncionario[]>([]);
+  const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<string>("todas");
   const [tipo, setTipo] = useState<string>("todos");
@@ -65,6 +77,22 @@ export default function FerramentasPage() {
     descricao: "",
   });
 
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/ferramentas").then((r) => r.json()),
+      fetch("/api/acessos").then((r) => r.json()),
+    ])
+      .then(([ferrs, acess]) => {
+        setFerramentas(Array.isArray(ferrs) ? ferrs : []);
+        setAcessos(Array.isArray(acess) ? acess : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const getTotalAtivos = (ferramentaId: string) =>
+    acessos.filter((a) => a.ferramentaId === ferramentaId && a.status === "Ativo").length;
+
   const filtered = ferramentas.filter((f) => {
     const matchBusca =
       f.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -75,6 +103,15 @@ export default function FerramentasPage() {
   });
 
   const hasFilters = busca || categoria !== "todas" || tipo !== "todos";
+
+  if (loading) {
+    return (
+      <PageMotion>
+        <PageHeader title="Ferramentas" description="Carregando..." />
+        <TableSkeleton />
+      </PageMotion>
+    );
+  }
 
   return (
     <PageMotion>
@@ -135,13 +172,13 @@ export default function FerramentasPage() {
               </tr>
             ) : (
               filtered.map((f) => {
-                const ativos = getTotalUsuariosAtivos(f.id);
+                const ativos = getTotalAtivos(f.id);
                 return (
                   <tr key={f.id} className={trHover}>
                     <td className={tdName}>
                       <div className="flex items-center gap-4">
                         <span className="text-xl flex-shrink-0" aria-hidden>
-                          {emojiCategoria[f.categoria]}
+                          {emojiCategoria[f.categoria as CategoriaFerramenta] ?? "📦"}
                         </span>
                         <div className="space-y-1">
                           <p className="font-medium text-foreground">{f.nome}</p>

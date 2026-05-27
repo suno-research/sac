@@ -1,17 +1,14 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Users, Clock, AlertCircle, Grid, ArrowRight, ChevronRight } from "lucide-react";
-import {
-  funcionarios,
-  movimentacoes,
-  offboardings,
-  getFuncionarioById,
-  countFuncionariosAtivos,
-  countPendentesConcessao,
-  countPendentesRemocao,
-  ferramentas,
-  acessos,
+import type {
+  Funcionario,
+  Ferramenta,
+  AcessoFuncionario,
+  Movimentacao,
+  Offboarding,
 } from "@/lib/mock-data";
 import {
   thFirst,
@@ -32,9 +29,40 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
-  const totalAtivos = countFuncionariosAtivos();
-  const pendentesConcessao = countPendentesConcessao();
-  const pendentesRemocao = countPendentesRemocao();
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
+  const [acessos, setAcessos] = useState<AcessoFuncionario[]>([]);
+  const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
+  const [offboardings, setOffboardings] = useState<Offboarding[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/funcionarios").then((r) => r.json()),
+      fetch("/api/ferramentas").then((r) => r.json()),
+      fetch("/api/acessos").then((r) => r.json()),
+      fetch("/api/movimentacoes").then((r) => r.json()),
+      fetch("/api/offboardings").then((r) => r.json()),
+    ])
+      .then(([funcs, ferrs, acess, movs, offs]) => {
+        setFuncionarios(Array.isArray(funcs) ? funcs : []);
+        setFerramentas(Array.isArray(ferrs) ? ferrs : []);
+        setAcessos(Array.isArray(acess) ? acess : []);
+        setMovimentacoes(Array.isArray(movs) ? movs : []);
+        setOffboardings(Array.isArray(offs) ? offs : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const getFuncionarioById = useMemo(() => {
+    const map = new Map(funcionarios.map((f) => [f.id, f]));
+    return (id: string) => map.get(id);
+  }, [funcionarios]);
+
+  const totalAtivos = funcionarios.filter((f) => f.status === "Ativo").length;
+  const pendentesConcessao = acessos.filter((a) => a.status === "Pendente concessão").length;
+  const pendentesRemocao = acessos.filter((a) => a.status === "Pendente remoção").length;
   const totalFerramentas = ferramentas.length;
 
   const ultimasMovimentacoes = [...movimentacoes]
@@ -78,6 +106,19 @@ export default function DashboardPage() {
       iconClassName: "text-muted-foreground bg-muted",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div style={{ height: 32, width: 200, background: "#F3F4F6", borderRadius: 8 }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ height: 120, background: "#F3F4F6", borderRadius: 16 }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PageMotion>

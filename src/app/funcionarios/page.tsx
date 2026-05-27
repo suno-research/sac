@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { funcionarios, getFuncionarioById } from "@/lib/mock-data";
-import type { AreaEmpresa } from "@/lib/mock-data";
+import type { Funcionario, AreaEmpresa } from "@/lib/mock-data";
 import {
   thFirst,
   thMid,
@@ -33,16 +32,43 @@ const areas: AreaEmpresa[] = [
   "Operações",
 ];
 
+function TableSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden p-6 space-y-3">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} style={{ height: 48, background: "#F3F4F6", borderRadius: 8 }} />
+      ))}
+    </div>
+  );
+}
+
 export default function FuncionariosPage() {
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [area, setArea] = useState<string>("todas");
   const [status, setStatus] = useState<string>("todos");
   const [gestor, setGestor] = useState<string>("todos");
 
+  useEffect(() => {
+    fetch("/api/funcionarios")
+      .then((r) => r.json())
+      .then((data) => {
+        setFuncionarios(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const getFuncionarioById = useMemo(() => {
+    const map = new Map(funcionarios.map((f) => [f.id, f]));
+    return (id: string) => map.get(id);
+  }, [funcionarios]);
+
   const gestores = useMemo(() => {
     const ids = [...new Set(funcionarios.map((f) => f.gestorId).filter(Boolean))] as string[];
     return ids.map((id) => getFuncionarioById(id)).filter(Boolean);
-  }, []);
+  }, [funcionarios, getFuncionarioById]);
 
   const filtered = useMemo(() => {
     return funcionarios.filter((f) => {
@@ -54,7 +80,7 @@ export default function FuncionariosPage() {
       const matchGestor = gestor === "todos" || f.gestorId === gestor;
       return matchBusca && matchArea && matchStatus && matchGestor;
     });
-  }, [busca, area, status, gestor]);
+  }, [funcionarios, busca, area, status, gestor]);
 
   const hasFilters = busca || area !== "todas" || status !== "todos" || gestor !== "todos";
 
@@ -64,6 +90,15 @@ export default function FuncionariosPage() {
     setStatus("todos");
     setGestor("todos");
   };
+
+  if (loading) {
+    return (
+      <PageMotion>
+        <PageHeader title="Funcionários" description="Carregando..." />
+        <TableSkeleton />
+      </PageMotion>
+    );
+  }
 
   return (
     <PageMotion>
