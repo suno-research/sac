@@ -38,10 +38,10 @@ export default function DashboardPage() {
   const pendenciasList = Object.values(pendencias).slice(0, 5);
 
   const kpis = [
-    { label: "Funcionários ativos", value: totalAtivos, icon: Users, color: "text-[#16a34a]", bg: "bg-green-50", border: "border-green-100" },
-    { label: "Acessos a conceder", value: pendentesConcessao, icon: Clock, color: "text-[#f59e0b]", bg: "bg-yellow-50", border: "border-yellow-100" },
-    { label: "Acessos a remover", value: pendentesRemocao, icon: AlertCircle, color: "text-[#D42126]", bg: "bg-red-50", border: "border-red-100" },
-    { label: "Ferramentas cadastradas", value: totalFerramentas, icon: Wrench, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+    { label: "Funcionários ativos", value: totalAtivos, icon: Users, iconColor: "text-[#16a34a]", iconBg: "bg-green-50" },
+    { label: "Acessos a conceder", value: pendentesConcessao, icon: Clock, iconColor: "text-[#d97706]", iconBg: "bg-yellow-50" },
+    { label: "Acessos a remover", value: pendentesRemocao, icon: AlertCircle, iconColor: "text-[#D42126]", iconBg: "bg-red-50" },
+    { label: "Ferramentas cadastradas", value: totalFerramentas, icon: Wrench, iconColor: "text-blue-600", iconBg: "bg-blue-50" },
   ];
 
   const offboardingsAbertos = offboardings.filter((o) => o.status === "Em andamento");
@@ -57,19 +57,15 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className={`border ${kpi.border}`}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm text-gray-500">{kpi.label}</CardTitle>
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${kpi.bg}`}>
-                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-                </div>
+          <div key={kpi.label} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-start justify-between">
+              <p className="text-sm text-slate-500">{kpi.label}</p>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${kpi.iconBg}`}>
+                <kpi.icon className={`h-4 w-4 ${kpi.iconColor}`} />
               </div>
-            </CardHeader>
-            <CardContent>
-              <p className={`text-3xl font-bold ${kpi.color}`}>{kpi.value}</p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{kpi.value}</p>
+          </div>
         ))}
       </div>
 
