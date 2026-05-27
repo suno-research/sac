@@ -18,6 +18,9 @@ const handler = NextAuth({
       const domain = email.split("@")[1];
       return ALLOWED_DOMAINS.includes(domain);
     },
+    async redirect({ url, baseUrl }) {
+      return baseUrl + "/dashboard";
+    },
     async session({ session, token }) {
       if (session.user) {
         const email = session.user.email || "";
