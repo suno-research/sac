@@ -21,9 +21,16 @@ export function Sidebar() {
       className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-sidebar-border bg-sidebar"
       style={{ width: "var(--sidebar-width)" }}
     >
-      <div className="px-7 py-8 border-b border-sidebar-border">
-        <img src="/suno-logo.png" alt="Suno" className="h-9 w-auto brightness-0 opacity-90 dark:brightness-100 dark:invert dark:opacity-100" />
-        <p className="text-sidebar-muted text-[11px] mt-3 font-medium tracking-[0.12em] uppercase">
+      <div className="px-5 py-7 border-b border-sidebar-border">
+        <Link href="/dashboard" className="block rounded-xl overflow-hidden ring-1 ring-black/5 shadow-xs transition-opacity hover:opacity-95">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/suno-logo.png"
+            alt="Suno"
+            className="w-full h-auto max-h-[52px] object-contain object-left bg-black"
+          />
+        </Link>
+        <p className="text-sidebar-muted text-[11px] mt-4 pl-1 font-medium tracking-[0.12em] uppercase">
           Access Control
         </p>
       </div>
