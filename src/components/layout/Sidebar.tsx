@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { LayoutDashboard, Users, Wrench, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SunoLogo } from "@/components/layout/SunoLogo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -18,41 +19,39 @@ export function Sidebar() {
 
   return (
     <aside
-      className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-sidebar-border bg-sidebar"
+      className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-sidebar-border bg-sidebar transition-colors duration-150"
       style={{ width: "var(--sidebar-width)" }}
     >
-      <div className="px-5 py-7 border-b border-sidebar-border">
-        <Link href="/dashboard" className="block rounded-xl overflow-hidden ring-1 ring-black/5 shadow-xs transition-opacity hover:opacity-95">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/suno-logo.png"
-            alt="Suno"
-            className="w-full h-auto max-h-[52px] object-contain object-left bg-black"
-          />
+      <div className="border-b border-sidebar-border px-5 py-6">
+        <Link
+          href="/dashboard"
+          className="block rounded-xl transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+        >
+          <SunoLogo height={44} className="max-w-[200px]" />
         </Link>
-        <p className="text-sidebar-muted text-[11px] mt-4 pl-1 font-medium tracking-[0.12em] uppercase">
+        <p className="mt-4 pl-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-sidebar-muted">
           Access Control
         </p>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1.5">
+      <nav className="flex-1 space-y-1.5 px-4 py-6">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
-            <Link key={href} href={href} className="block relative">
+            <Link key={href} href={href} className="relative block">
               {active && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-xl bg-sidebar-active border-l-[3px] border-l-accent"
+                  className="absolute inset-0 rounded-xl border-l-[3px] border-l-accent bg-sidebar-active"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
               <span
                 className={cn(
-                  "relative flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors duration-150",
+                  "relative flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-[15px] font-medium transition-colors duration-150",
                   active
                     ? "text-foreground"
-                    : "text-sidebar-foreground hover:text-foreground hover:bg-muted/60"
+                    : "text-sidebar-foreground hover:bg-muted/50 hover:text-foreground"
                 )}
               >
                 <Icon className={cn("h-5 w-5 flex-shrink-0", active && "text-accent")} />
@@ -63,16 +62,16 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 py-6 border-t border-sidebar-border">
-        <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer">
-          <div className="h-10 w-10 rounded-full bg-accent-muted text-accent flex items-center justify-center text-sm font-semibold flex-shrink-0">
+      <div className="border-t border-sidebar-border px-4 py-6">
+        <div className="flex cursor-pointer items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors hover:bg-muted/50">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-muted text-sm font-semibold text-accent">
             DL
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-foreground text-sm font-medium truncate">Daniel Lopes</p>
-            <p className="text-sidebar-muted text-xs truncate mt-0.5">Coordenador de TI</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">Daniel Lopes</p>
+            <p className="mt-0.5 truncate text-xs text-sidebar-muted">Coordenador de TI</p>
           </div>
-          <span className="text-[10px] font-semibold px-2 py-1 rounded-md bg-accent-muted text-accent">
+          <span className="rounded-md bg-accent-muted px-2 py-1 text-[10px] font-semibold text-accent">
             TI
           </span>
         </div>

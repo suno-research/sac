@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Bell, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/providers/theme-provider";
+import { cn } from "@/lib/utils";
 
 export function Header() {
   const { data: session } = useSession();
@@ -37,111 +38,62 @@ export function Header() {
 
   return (
     <header
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 256,
-        right: 0,
-        zIndex: 20,
-        height: 64,
-        background: "white",
-        borderBottom: "1px solid #E5E7EB",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 32px",
-      }}
-      className="bg-card/80 backdrop-blur-md border-b border-border"
+      className={cn(
+        "fixed top-0 right-0 z-20 flex items-center justify-between",
+        "h-[var(--header-height)] px-6 sm:px-8",
+        "border-b border-header-border bg-header/95 backdrop-blur-md",
+        "transition-colors duration-150"
+      )}
+      style={{ left: "var(--sidebar-width)" }}
     >
       <div />
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <div className="flex items-center gap-3 sm:gap-4">
         <button
           type="button"
           onClick={toggleTheme}
-          style={{
-            padding: 8,
-            borderRadius: 12,
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            color: "#6B7280",
-          }}
+          className="rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground"
           aria-label={theme === "dark" ? "Modo claro" : "Modo escuro"}
         >
           {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
         </button>
+
         <button
           type="button"
-          style={{
-            position: "relative",
-            padding: 8,
-            borderRadius: 12,
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            color: "#6B7280",
-          }}
+          className="relative rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground"
           aria-label="Notificações"
         >
           <Bell size={20} />
           {pendencias > 0 && (
-            <span
-              style={{
-                position: "absolute",
-                top: 6,
-                right: 6,
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: "#D42126",
-              }}
-            />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" />
           )}
         </button>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            paddingLeft: 16,
-            borderLeft: "1px solid #E5E7EB",
-          }}
-        >
+        <div className="flex items-center gap-3 border-l border-header-border pl-4">
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={foto} alt={nome} style={{ width: 32, height: 32, borderRadius: "50%" }} />
+            <img
+              src={foto}
+              alt={nome}
+              className="h-8 w-8 rounded-full object-cover ring-1 ring-header-border"
+            />
           ) : (
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: "#D42126",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontSize: 12,
-                fontWeight: 700,
-              }}
-            >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
               {initials}
             </div>
           )}
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{nome}</p>
-            <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>{email}</p>
+          <div className="hidden sm:block">
+            <p className="m-0 text-[13px] font-semibold leading-tight text-header-foreground">
+              {nome}
+            </p>
+            <p className="m-0 text-[11px] leading-tight text-header-muted">{email}</p>
           </div>
           <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              padding: "2px 8px",
-              borderRadius: 6,
-              background: role === "ti" ? "#FEE2E2" : "#EFF6FF",
-              color: role === "ti" ? "#D42126" : "#3B82F6",
-            }}
+            className={cn(
+              "rounded-md px-2 py-0.5 text-[10px] font-semibold",
+              role === "ti"
+                ? "bg-accent-muted text-accent"
+                : "bg-muted text-muted-foreground dark:bg-blue-500/15 dark:text-blue-300"
+            )}
           >
             {role === "ti" ? "TI" : "Gestor"}
           </span>
@@ -150,14 +102,7 @@ export function Header() {
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
-          style={{
-            padding: 8,
-            borderRadius: 12,
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            color: "#9CA3AF",
-          }}
+          className="rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground"
           title="Sair"
         >
           <LogOut size={16} />
