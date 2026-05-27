@@ -13,6 +13,10 @@ import {
   acessos,
 } from "@/lib/mock-data";
 
+const thClass =
+  "px-6 py-4 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider whitespace-nowrap";
+const tdClass = "px-6 py-4 text-sm whitespace-nowrap";
+
 function getInitials(nome: string) {
   return nome
     .split(" ")
@@ -81,7 +85,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#111827]">Dashboard</h1>
         <p className="text-sm text-[#6B7280] mt-1">Visão geral do controle de acessos da Suno</p>
@@ -91,15 +95,17 @@ export default function DashboardPage() {
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8 min-h-[120px]"
+            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm p-8 min-h-[140px] flex flex-col justify-between"
           >
             <div className="flex items-start justify-end">
               <div className={`p-3 rounded-2xl ${kpi.iconBg}`}>
                 <kpi.icon className={`h-5 w-5 ${kpi.iconColor}`} />
               </div>
             </div>
-            <p className="text-4xl font-bold text-[#111827] mt-6">{kpi.value}</p>
-            <p className="text-sm text-[#6B7280] mt-1">{kpi.label}</p>
+            <div>
+              <p className="text-4xl font-bold text-[#111827] mt-6">{kpi.value}</p>
+              <p className="text-sm text-[#6B7280] mt-1">{kpi.label}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -145,66 +151,60 @@ export default function DashboardPage() {
               Ver todos
             </Link>
           </div>
-          <table className="w-full text-sm">
-            <thead className="bg-[#F9FAFB]">
-              <tr>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Funcionário
-                </th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Tipo
-                </th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Data
-                </th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F3F4F6]">
-              {ultimasMovimentacoes.map((mov) => {
-                const func = getFuncionarioById(mov.funcionarioId);
-                return (
-                  <tr key={mov.id} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        {func && (
-                          <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                            {getInitials(func.nome)}
-                          </div>
-                        )}
-                        <span className="font-medium text-[#111827]">{func?.nome ?? "—"}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          mov.tipo === "onboarding"
-                            ? "bg-[#DCFCE7] text-[#16A34A]"
-                            : "bg-[#FEF2F2] text-[#D42126]"
-                        }`}
-                      >
-                        {mov.tipo === "onboarding" ? "Onboarding" : "Offboarding"}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5 text-[#6B7280]">
-                      {new Date(mov.data + "T00:00:00").toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="px-8 py-5">
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          statusBadge[mov.status] ?? "bg-[#F3F4F6] text-[#6B7280]"
-                        }`}
-                      >
-                        {mov.status}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F9FAFB]">
+                <tr>
+                  <th className={thClass}>Funcionário</th>
+                  <th className={thClass}>Tipo</th>
+                  <th className={thClass}>Data</th>
+                  <th className={thClass}>Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F3F4F6]">
+                {ultimasMovimentacoes.map((mov) => {
+                  const func = getFuncionarioById(mov.funcionarioId);
+                  return (
+                    <tr key={mov.id} className="hover:bg-[#F9FAFB] transition-colors">
+                      <td className={tdClass}>
+                        <div className="flex items-center gap-3">
+                          {func && (
+                            <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                              {getInitials(func.nome)}
+                            </div>
+                          )}
+                          <span className="font-medium text-[#111827]">{func?.nome ?? "—"}</span>
+                        </div>
+                      </td>
+                      <td className={tdClass}>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            mov.tipo === "onboarding"
+                              ? "bg-[#DCFCE7] text-[#16A34A]"
+                              : "bg-[#FEF2F2] text-[#D42126]"
+                          }`}
+                        >
+                          {mov.tipo === "onboarding" ? "Onboarding" : "Offboarding"}
+                        </span>
+                      </td>
+                      <td className={`${tdClass} text-[#6B7280]`}>
+                        {new Date(mov.data + "T00:00:00").toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className={tdClass}>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            statusBadge[mov.status] ?? "bg-[#F3F4F6] text-[#6B7280]"
+                          }`}
+                        >
+                          {mov.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
@@ -214,60 +214,56 @@ export default function DashboardPage() {
               {pendentesConcessao + pendentesRemocao} itens
             </span>
           </div>
-          <table className="w-full text-sm">
-            <thead className="bg-[#F9FAFB]">
-              <tr>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Funcionário
-                </th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Área
-                </th>
-                <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Ação
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F3F4F6]">
-              {pendenciasList.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F9FAFB]">
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-sm text-[#9CA3AF]">
-                    Nenhuma pendência
-                  </td>
+                  <th className={`${thClass} min-w-[200px]`}>Funcionário</th>
+                  <th className={thClass}>Área</th>
+                  <th className={thClass}>Ação</th>
                 </tr>
-              ) : (
-                pendenciasList.map((p) => {
-                  const func = getFuncionarioById(p.funcionarioId);
-                  return (
-                    <tr key={p.funcionarioId} className="hover:bg-[#F9FAFB] transition-colors">
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-3">
-                          {func && (
-                            <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                              {getInitials(func.nome)}
+              </thead>
+              <tbody className="divide-y divide-[#F3F4F6]">
+                {pendenciasList.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-sm text-[#9CA3AF]">
+                      Nenhuma pendência
+                    </td>
+                  </tr>
+                ) : (
+                  pendenciasList.map((p) => {
+                    const func = getFuncionarioById(p.funcionarioId);
+                    return (
+                      <tr key={p.funcionarioId} className="hover:bg-[#F9FAFB] transition-colors">
+                        <td className={`${tdClass} min-w-[200px]`}>
+                          <div className="flex items-center gap-3">
+                            {func && (
+                              <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                                {getInitials(func.nome)}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-[#111827]">{func?.nome ?? "—"}</p>
+                              <p className="text-xs text-[#9CA3AF]">{func?.cargo}</p>
                             </div>
-                          )}
-                          <div>
-                            <p className="font-medium text-[#111827]">{func?.nome ?? "—"}</p>
-                            <p className="text-xs text-[#9CA3AF]">{func?.cargo}</p>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-5 text-[#6B7280]">{func?.area}</td>
-                      <td className="px-8 py-5">
-                        <Link
-                          href={`/funcionarios/${p.funcionarioId}`}
-                          className="text-sm font-medium text-[#D42126] hover:underline"
-                        >
-                          Ver acessos
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                        </td>
+                        <td className={`${tdClass} text-[#6B7280]`}>{func?.area}</td>
+                        <td className={tdClass}>
+                          <Link
+                            href={`/funcionarios/${p.funcionarioId}`}
+                            className="text-sm font-medium text-[#D42126] hover:underline"
+                          >
+                            Ver acessos
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -278,63 +274,57 @@ export default function DashboardPage() {
             Ver todos
           </Link>
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-[#F9FAFB]">
-            <tr>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                Nome
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                Cargo
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                Área
-              </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-8 py-4" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#F3F4F6]">
-            {funcionarios.slice(0, 6).map((func) => (
-              <tr key={func.id} className="hover:bg-[#F9FAFB] transition-colors">
-                <td className="px-8 py-5">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                      {getInitials(func.nome)}
-                    </div>
-                    <div>
-                      <p className="font-medium text-[#111827]">{func.nome}</p>
-                      <p className="text-xs text-[#9CA3AF]">{func.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-8 py-5 text-[#374151]">{func.cargo}</td>
-                <td className="px-8 py-5 text-[#6B7280]">{func.area}</td>
-                <td className="px-8 py-5">
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      func.status === "Ativo"
-                        ? "bg-[#DCFCE7] text-[#16A34A]"
-                        : "bg-[#F3F4F6] text-[#6B7280]"
-                    }`}
-                  >
-                    {func.status}
-                  </span>
-                </td>
-                <td className="px-8 py-5 text-right">
-                  <Link
-                    href={`/funcionarios/${func.id}`}
-                    className="text-sm font-medium text-[#D42126] hover:underline"
-                  >
-                    Ver acessos
-                  </Link>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-[#F9FAFB]">
+              <tr>
+                <th className={`${thClass} min-w-[200px]`}>Nome</th>
+                <th className={thClass}>Cargo</th>
+                <th className={thClass}>Área</th>
+                <th className={thClass}>Status</th>
+                <th className={thClass} />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-[#F3F4F6]">
+              {funcionarios.slice(0, 6).map((func) => (
+                <tr key={func.id} className="hover:bg-[#F9FAFB] transition-colors">
+                  <td className={`${tdClass} min-w-[200px]`}>
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {getInitials(func.nome)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-[#111827]">{func.nome}</p>
+                        <p className="text-xs text-[#9CA3AF]">{func.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className={`${tdClass} text-[#374151]`}>{func.cargo}</td>
+                  <td className={`${tdClass} text-[#6B7280]`}>{func.area}</td>
+                  <td className={tdClass}>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        func.status === "Ativo"
+                          ? "bg-[#DCFCE7] text-[#16A34A]"
+                          : "bg-[#F3F4F6] text-[#6B7280]"
+                      }`}
+                    >
+                      {func.status}
+                    </span>
+                  </td>
+                  <td className={`${tdClass} text-right`}>
+                    <Link
+                      href={`/funcionarios/${func.id}`}
+                      className="text-sm font-medium text-[#D42126] hover:underline"
+                    >
+                      Ver acessos
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

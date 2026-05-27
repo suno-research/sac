@@ -19,10 +19,8 @@ export function Sidebar() {
       className="fixed inset-y-0 left-0 bg-[#111827] flex flex-col z-30"
     >
       <div className="px-6 py-6 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <img src="/suno-logo.svg" alt="Suno" className="h-7 w-auto" />
-        </div>
-        <p className="text-[#9CA3AF] text-[11px] mt-3 font-medium tracking-wider uppercase">
+        <img src="/suno-logo.svg" alt="Suno" className="h-6 w-auto" />
+        <p className="text-[#9CA3AF] text-[10px] tracking-widest uppercase mt-2">
           Access Control
         </p>
       </div>

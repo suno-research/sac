@@ -58,7 +58,7 @@ export default function FerramentasPage() {
   const hasFilters = busca || categoria !== "todas" || tipo !== "todos";
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 w-full">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">Ferramentas</h1>
@@ -122,23 +122,23 @@ export default function FerramentasPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-[#F9FAFB]">
             <tr>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap min-w-[220px]">
                 Nome
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap">
                 Categoria
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap">
                 Tipo de acesso
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap min-w-[200px]">
                 URL
               </th>
-              <th className="px-8 py-4 text-center text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap pr-8">
                 Usuários ativos
               </th>
             </tr>
@@ -155,7 +155,7 @@ export default function FerramentasPage() {
                 const ativos = getTotalUsuariosAtivos(f.id);
                 return (
                   <tr key={f.id} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 whitespace-nowrap min-w-[220px]">
                       <div className="flex items-center">
                         <span className="mr-3 text-base" aria-hidden>
                           {emojiCategoria[f.categoria]}
@@ -166,12 +166,12 @@ export default function FerramentasPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 whitespace-nowrap">
                       <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151]">
                         {f.categoria}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 whitespace-nowrap">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           f.tipo === "Passbolt"
@@ -182,7 +182,7 @@ export default function FerramentasPage() {
                         {f.tipo}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 whitespace-nowrap min-w-[200px]">
                       <a
                         href={f.url}
                         target="_blank"
@@ -192,7 +192,7 @@ export default function FerramentasPage() {
                         {f.url.replace("https://", "")}
                       </a>
                     </td>
-                    <td className="px-8 py-5 text-center">
+                    <td className="px-6 py-5 whitespace-nowrap text-right pr-8">
                       <span className="font-medium text-[#111827]">{ativos}</span>
                     </td>
                   </tr>

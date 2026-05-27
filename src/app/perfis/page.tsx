@@ -41,7 +41,7 @@ export default function PerfisPage() {
   }, {});
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 w-full">
       <div>
         <h1 className="text-2xl font-bold text-[#111827]">Perfis Padrão</h1>
         <p className="text-sm text-[#6B7280] mt-1">
@@ -56,7 +56,7 @@ export default function PerfisPage() {
 
           return (
             <div key={perfil.id} className="h-auto shadow-sm">
-              <div className="bg-[#111827] rounded-t-2xl px-8 py-7 flex items-start justify-between gap-3">
+              <div className="bg-[#111827] rounded-t-2xl px-8 py-8 flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-white text-xl font-bold">{perfil.cargo}</h2>
                   <p className="text-[#9CA3AF] text-xs mt-1.5 font-medium tracking-wide uppercase">
@@ -73,20 +73,20 @@ export default function PerfisPage() {
                 </button>
               </div>
 
-              <div className="bg-white border border-[#E5E7EB] border-t-0 rounded-b-2xl px-8 py-6 h-auto">
-                <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">{perfil.descricao}</p>
+              <div className="bg-white border border-[#E5E7EB] border-t-0 rounded-b-2xl px-8 py-8 h-auto">
+                <p className="mb-6 leading-relaxed text-sm text-[#6B7280]">{perfil.descricao}</p>
 
-                <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3">
+                <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">
                   Ferramentas incluídas
                 </p>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mt-1">
                   {ferrsDoPerfil.map(
                     (f) =>
                       f && (
                         <span
                           key={f.id}
-                          className={`text-xs px-4 py-2 rounded-full font-medium ${
+                          className={`px-4 py-2 rounded-full text-xs font-medium ${
                             f.tipo === "Passbolt"
                               ? "bg-[#FEF3C7] text-[#D97706]"
                               : "bg-[#F3F4F6] text-[#374151]"

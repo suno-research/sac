@@ -54,8 +54,8 @@ export default function FuncionariosPage() {
   const hasFilters = busca || area !== "todas" || status !== "todos" || gestor !== "todos";
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">Funcionários</h1>
           <p className="text-sm text-[#6B7280] mt-1">
@@ -119,29 +119,29 @@ export default function FuncionariosPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-[#F9FAFB]">
             <tr>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap min-w-[220px]">
                 Nome
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap min-w-[200px]">
                 Cargo
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap">
                 Área
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap">
                 Gestor
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap">
                 Status
               </th>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider whitespace-nowrap">
                 Entrada
               </th>
-              <th className="px-8 py-4" />
+              <th className="px-6 py-4 whitespace-nowrap" />
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F3F4F6]">
@@ -158,7 +158,7 @@ export default function FuncionariosPage() {
                   : "—";
                 return (
                   <tr key={func.id} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 whitespace-nowrap min-w-[220px]">
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 rounded-full bg-[#D42126] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                           {getInitials(func.nome)}
@@ -169,14 +169,14 @@ export default function FuncionariosPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-[#374151]">{func.cargo}</td>
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 whitespace-nowrap min-w-[200px] text-[#374151]">{func.cargo}</td>
+                    <td className="px-6 py-5 whitespace-nowrap">
                       <span className="rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#374151]">
                         {func.area}
                       </span>
                     </td>
-                    <td className="px-8 py-5 text-[#6B7280]">{gestorNome}</td>
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5 whitespace-nowrap text-[#6B7280]">{gestorNome}</td>
+                    <td className="px-6 py-5 whitespace-nowrap">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           func.status === "Ativo"
@@ -187,10 +187,10 @@ export default function FuncionariosPage() {
                         {func.status}
                       </span>
                     </td>
-                    <td className="px-8 py-5 text-[#6B7280]">
+                    <td className="px-6 py-5 whitespace-nowrap text-[#6B7280]">
                       {new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-6 py-5 whitespace-nowrap text-right pr-8">
                       <Link
                         href={`/funcionarios/${func.id}`}
                         className="text-sm font-medium text-[#D42126] hover:underline"
