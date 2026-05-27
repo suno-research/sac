@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -14,17 +14,59 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { perfisPadrao, ferramentas, getFerramentaById } from "@/lib/mock-data";
-import type { PerfilPadrao } from "@/lib/mock-data";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+interface PerfilPadrao {
+  id: string;
+  cargo: string;
+  area: string;
+  ferramentaIds: string[];
+  descricao: string;
+}
+
+interface Ferramenta {
+  id: string;
+  nome: string;
+  categoria: string;
+  tipo: string;
+  url: string;
+  descricao: string;
+}
+
+function PerfisSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      {[1, 2, 3].map((i) => (
+        <div key={i} style={{ height: 280, background: "#F3F4F6", borderRadius: 16 }} />
+      ))}
+    </div>
+  );
+}
+
 export default function PerfisPage() {
-  const [perfis, setPerfis] = useState<PerfilPadrao[]>(perfisPadrao);
+  const [perfis, setPerfis] = useState<PerfilPadrao[]>([]);
+  const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState<PerfilPadrao | null>(null);
   const [ferramentasSelecionadas, setFerramentasSelecionadas] = useState<string[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/perfis").then((r) => r.json()),
+      fetch("/api/ferramentas").then((r) => r.json()),
+    ])
+      .then(([p, f]) => {
+        setPerfis(Array.isArray(p) ? p : []);
+        setFerramentas(Array.isArray(f) ? f : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const getFerramentaById = (id: string) => ferramentas.find((f) => f.id === id);
 
   const abrirEdicao = (perfil: PerfilPadrao) => {
     setEditando({ ...perfil });
@@ -47,11 +89,20 @@ export default function PerfisPage() {
     );
   };
 
-  const ferramentasAgrupadas = ferramentas.reduce<Record<string, typeof ferramentas>>((acc, f) => {
+  const ferramentasAgrupadas = ferramentas.reduce<Record<string, Ferramenta[]>>((acc, f) => {
     if (!acc[f.categoria]) acc[f.categoria] = [];
     acc[f.categoria].push(f);
     return acc;
   }, {});
+
+  if (loading) {
+    return (
+      <PageMotion>
+        <PageHeader title="Perfis Padrão" description="Carregando..." />
+        <PerfisSkeleton />
+      </PageMotion>
+    );
+  }
 
   return (
     <PageMotion>

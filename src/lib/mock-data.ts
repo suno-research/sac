@@ -1,5 +1,8 @@
 // ============================================================
 // SAC — Suno Access Control — Dados Mockados
+// Usado apenas por src/scripts/seed-sheets.ts para popular o Google Sheets.
+// O app em runtime consome as APIs (/api/*).
+// Este arquivo será removido após validação completa da integração com Google Sheets.
 // ============================================================
 
 export type Perfil = "TI" | "Gestor";

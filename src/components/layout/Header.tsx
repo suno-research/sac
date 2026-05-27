@@ -1,13 +1,26 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Bell, Moon, Sun } from "lucide-react";
-import { countPendentesConcessao, countPendentesRemocao } from "@/lib/mock-data";
 import { useTheme } from "@/providers/theme-provider";
-
-const pendencias = countPendentesConcessao() + countPendentesRemocao();
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
+  const [pendencias, setPendencias] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/acessos")
+      .then((r) => r.json())
+      .then((acessos) => {
+        if (!Array.isArray(acessos)) return;
+        const count = acessos.filter(
+          (a: { status: string }) =>
+            a.status === "Pendente concessão" || a.status === "Pendente remoção"
+        ).length;
+        setPendencias(count);
+      })
+      .catch(() => setPendencias(0));
+  }, []);
 
   return (
     <header
