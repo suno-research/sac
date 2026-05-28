@@ -17,7 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar } from "@/components/ui/avatar";
-import { thFirst, thMid, thLast, tdFirst, tdMid, tdLast, trHover } from "@/lib/table-classes";
+import { thFirst, thMid, thLast, tdFirst, tdMid, trHover } from "@/lib/table-classes";
 
 type StatusAcesso = "Ativo" | "Pendente concessão" | "Pendente remoção" | "Sem acesso";
 
@@ -322,9 +322,7 @@ export default function FuncionarioDetailPage() {
                   <th className={thMid}>Status</th>
                   <th className={thMid}>Concessão</th>
                   <th className={thMid}>Concedido por</th>
-                  <th className={`${thLast} min-w-[3.5rem] w-14`}>
-                    <span className="sr-only">Ações</span>
-                  </th>
+                  <th className={thLast} />
                 </tr>
               </thead>
               <tbody>
@@ -342,7 +340,6 @@ export default function FuncionarioDetailPage() {
                         ? getNomeFuncionario(acesso.concedidoPor)
                         : acesso.concedidoPor
                       : "—";
-                    const podeRemover = funcionario.status === "Ativo";
                     return (
                       <tr key={acesso.id} className={trHover}>
                         <td className={tdFirst}>
@@ -370,18 +367,16 @@ export default function FuncionarioDetailPage() {
                           {acesso.dataConcessao ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
                         </td>
                         <td className={tdMid}>{concedidoPorNome}</td>
-                        <td className={`${tdLast} text-right min-w-[3.5rem] w-14`}>
-                          {podeRemover && (
-                            <Button
+                        <td className="px-4 py-6 text-right">
+                          {funcionario.status === "Ativo" && (
+                            <button
                               type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              aria-label="Remover acesso"
                               onClick={() => { setAcessoParaRemover(acesso); setErro(""); setModalRemover(true); }}
+                              className="p-2 rounded-lg hover:bg-red-50 text-red-500 hover:text-red-600 transition-colors dark:hover:bg-red-950/40"
+                              title="Remover acesso"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </button>
                           )}
                         </td>
                       </tr>
