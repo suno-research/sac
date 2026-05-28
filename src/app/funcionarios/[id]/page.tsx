@@ -227,6 +227,8 @@ export default function FuncionarioDetailPage() {
     return acc;
   }, {});
 
+  const funcionarioAtivo = String(funcionario.status).trim() === "Ativo";
+
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center gap-2">
@@ -299,7 +301,7 @@ export default function FuncionarioDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Ferramentas e acessos ({acessos.length})</CardTitle>
-            {funcionario.status === "Ativo" && (
+            {funcionarioAtivo && (
               <Button
                 size="sm"
                 onClick={() => { setFerramentaSelecionada(""); setErro(""); setModalAdicionar(true); }}
@@ -322,7 +324,11 @@ export default function FuncionarioDetailPage() {
                   <th className={thMid}>Status</th>
                   <th className={thMid}>Concessão</th>
                   <th className={thMid}>Concedido por</th>
-                  <th className={thLast} />
+                  <th
+                    className={`${thLast} sticky right-0 z-10 min-w-[4.5rem] bg-muted/40 text-center`}
+                  >
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -341,7 +347,7 @@ export default function FuncionarioDetailPage() {
                         : acesso.concedidoPor
                       : "—";
                     return (
-                      <tr key={acesso.id} className={trHover}>
+                      <tr key={acesso.id} className={`group ${trHover}`}>
                         <td className={tdFirst}>
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-foreground">
@@ -367,16 +373,19 @@ export default function FuncionarioDetailPage() {
                           {acesso.dataConcessao ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
                         </td>
                         <td className={tdMid}>{concedidoPorNome}</td>
-                        <td className="px-4 py-6 text-right">
-                          {funcionario.status === "Ativo" && (
+                        <td className="sticky right-0 z-10 min-w-[4.5rem] bg-card group-hover:bg-muted/60 px-3 py-6 text-center border-l border-border/60">
+                          {funcionarioAtivo ? (
                             <button
                               type="button"
                               onClick={() => { setAcessoParaRemover(acesso); setErro(""); setModalRemover(true); }}
-                              className="p-2 rounded-lg hover:bg-red-50 text-red-500 hover:text-red-600 transition-colors dark:hover:bg-red-950/40"
+                              className="inline-flex items-center justify-center p-2 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors"
                               title="Remover acesso"
+                              aria-label={`Remover acesso ${ferramenta?.nome ?? acesso.ferramentaId}`}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 shrink-0" />
                             </button>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
                           )}
                         </td>
                       </tr>
