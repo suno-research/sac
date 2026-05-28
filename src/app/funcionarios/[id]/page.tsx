@@ -322,7 +322,9 @@ export default function FuncionarioDetailPage() {
                   <th className={thMid}>Status</th>
                   <th className={thMid}>Concessão</th>
                   <th className={thMid}>Concedido por</th>
-                  <th className={thLast} />
+                  <th className={`${thLast} min-w-[3.5rem] w-14`}>
+                    <span className="sr-only">Ações</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -335,35 +337,47 @@ export default function FuncionarioDetailPage() {
                 ) : (
                   acessos.map((acesso) => {
                     const ferramenta = getFerramentaById(acesso.ferramentaId);
-                    if (!ferramenta) return null;
                     const concedidoPorNome = acesso.concedidoPor
                       ? getNomeFuncionario(acesso.concedidoPor) !== "—"
                         ? getNomeFuncionario(acesso.concedidoPor)
                         : acesso.concedidoPor
                       : "—";
+                    const podeRemover = funcionario.status === "Ativo";
                     return (
                       <tr key={acesso.id} className={trHover}>
                         <td className={tdFirst}>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-foreground">{ferramenta.nome}</p>
-                            <a href={ferramenta.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
+                            <p className="font-medium text-foreground">
+                              {ferramenta?.nome ?? acesso.ferramentaId}
+                            </p>
+                            {ferramenta?.url && (
+                              <a href={ferramenta.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            )}
                           </div>
                         </td>
-                        <td className={tdMid}><Badge variant="secondary">{ferramenta.categoria}</Badge></td>
-                        <td className={tdMid}><Badge variant={ferramenta.tipo === "Passbolt" ? "warning" : "secondary"}>{ferramenta.tipo}</Badge></td>
+                        <td className={tdMid}>
+                          <Badge variant="secondary">{ferramenta?.categoria ?? "—"}</Badge>
+                        </td>
+                        <td className={tdMid}>
+                          <Badge variant={ferramenta?.tipo === "Passbolt" ? "warning" : "secondary"}>
+                            {ferramenta?.tipo ?? "—"}
+                          </Badge>
+                        </td>
                         <td className={tdMid}><StatusAcessoBadge status={acesso.status} /></td>
                         <td className={tdMid}>
                           {acesso.dataConcessao ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
                         </td>
                         <td className={tdMid}>{concedidoPorNome}</td>
-                        <td className={`${tdLast} text-right`}>
-                          {funcionario.status === "Ativo" && (
+                        <td className={`${tdLast} text-right min-w-[3.5rem] w-14`}>
+                          {podeRemover && (
                             <Button
+                              type="button"
                               variant="ghost"
                               size="sm"
-                              className="text-destructive hover:text-destructive"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              aria-label="Remover acesso"
                               onClick={() => { setAcessoParaRemover(acesso); setErro(""); setModalRemover(true); }}
                             >
                               <Trash2 className="h-4 w-4" />
