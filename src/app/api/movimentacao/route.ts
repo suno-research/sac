@@ -1,144 +1,243 @@
 import { NextResponse } from "next/server";
-import { appendSheetRow, getSheetData } from "@/lib/sheets";
+import { getSheetData, appendSheetRow, updateSheetRow } from "@/lib/sheets";
+
+// Normaliza nome para comparação
+function normalizar(nome: string): string {
+  return nome.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+// Match fuzzy por tokens — retorna score
+function calcularScore(nomeA: string, nomeB: string): number {
+  const tokensA = new Set(normalizar(nomeA).split(" "));
+  const tokensB = new Set(normalizar(nomeB).split(" "));
+  const intersec = [...tokensA].filter((t) => tokensB.has(t));
+  let score = intersec.length;
+  const partesA = normalizar(nomeA).split(" ");
+  const partesB = normalizar(nomeB).split(" ");
+  if (partesA[0] === partesB[0]) score += 0.5;
+  if (partesA[partesA.length - 1] === partesB[partesB.length - 1]) score += 0.5;
+  return score;
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const {
-      tipo, // "onboarding" ou "offboarding"
-      nome,
-      email,
-      cargo,
-      area,
-      gestorEmail: _gestorEmail,
-      dataEvento,
-    } = body;
+    const { tipo, nome, email, cargo, area, dataEvento } = body;
 
-    // Gerar ID único
-    const timestamp = Date.now();
-    const funcionarioId = `u${timestamp}`;
-    const movimentacaoId = `m${timestamp}`;
+    if (!tipo || !nome) {
+      return NextResponse.json({ error: "tipo e nome são obrigatórios" }, { status: 400 });
+    }
 
+    const hoje = dataEvento || new Date().toISOString().split("T")[0];
+
+    // Buscar dados existentes
+    const [funcRows, acessoRows, perfilRows, ferrRows] = await Promise.all([
+      getSheetData("funcionarios!A2:I"),
+      getSheetData("acessos!A2:F"),
+      getSheetData("perfis_padrao!A2:E"),
+      getSheetData("ferramentas!A2:F"),
+    ]);
+
+    // Mapear funcionários
+    const funcionarios = funcRows.map((row) => ({
+      id: row[0] || "",
+      nome: row[1] || "",
+      email: row[2] || "",
+      cargo: row[3] || "",
+      area: row[4] || "",
+      gestorId: row[5] || "",
+      status: row[6] || "Ativo",
+      dataEntrada: row[7] || "",
+      dataDesligamento: row[8] || "",
+    })).filter((f) => f.id);
+
+    // Buscar funcionário por nome (fuzzy match)
+    let funcionario = null;
+    let melhorScore = 0;
+
+    for (const func of funcionarios) {
+      const score = calcularScore(nome, func.nome);
+      if (score > melhorScore && score >= 1.5) {
+        melhorScore = score;
+        funcionario = func;
+      }
+    }
+
+    // ==================
+    // ONBOARDING
+    // ==================
     if (tipo === "onboarding") {
-      // 1. Adicionar funcionário na aba funcionarios
-      await appendSheetRow("funcionarios!A:I", [
-        funcionarioId,
-        nome,
-        email,
-        cargo,
-        area,
-        "", // gestorId — será resolvido depois
-        "Ativo",
-        dataEvento || new Date().toISOString().split("T")[0],
-        "",
-      ]);
+      let funcionarioId: string;
 
-      // 2. Buscar perfil padrão do cargo
-      const perfisRows = await getSheetData("perfis_padrao!A2:E");
-      const perfil = perfisRows.find(
-        (row) =>
-          row[1]?.toLowerCase().includes(cargo?.toLowerCase()) ||
-          cargo?.toLowerCase().includes(row[1]?.toLowerCase())
+      if (funcionario) {
+        // Funcionário já existe — usar ID existente
+        funcionarioId = funcionario.id;
+
+        // Atualizar status para Ativo se estava Desligado
+        if (funcionario.status === "Desligado") {
+          const rowIndex = funcRows.findIndex((r) => r[0] === funcionarioId);
+          if (rowIndex !== -1) {
+            const sheetRow = rowIndex + 2;
+            await updateSheetRow(`funcionarios!A${sheetRow}:I${sheetRow}`, [
+              funcionario.id,
+              funcionario.nome,
+              email || funcionario.email,
+              cargo || funcionario.cargo,
+              area || funcionario.area,
+              funcionario.gestorId,
+              "Ativo",
+              hoje,
+              "",
+            ]);
+          }
+        }
+      } else {
+        // Funcionário novo — criar
+        funcionarioId = `u${Date.now()}`;
+        await appendSheetRow("funcionarios!A:I", [
+          funcionarioId,
+          nome,
+          email || "",
+          cargo || "",
+          area || "",
+          "",
+          "Ativo",
+          hoje,
+          "",
+        ]);
+      }
+
+      // Buscar perfil padrão da área
+      const areaFunc = area || funcionario?.area || "";
+      const perfil = perfilRows.find(
+        (p) => p[2] && normalizar(p[2]) === normalizar(areaFunc)
       );
 
-      // 3. Se encontrou perfil, criar acessos pendentes
-      if (perfil && perfil[3]) {
-        const ferramentaIds = perfil[3].split(",").map((s) => s.trim());
-        for (const ferramentaId of ferramentaIds) {
-          const acessoId = `a${Date.now()}${Math.random().toString(36).substr(2, 4)}`;
+      // IDs das ferramentas do perfil
+      const ferramentaIds: string[] = perfil && perfil[3]
+        ? perfil[3].split(",").map((s: string) => s.trim()).filter(Boolean)
+        : ["f01", "f02", "f08", "f03"]; // padrão mínimo
+
+      // Verificar quais acessos já existem para não duplicar
+      const acessosExistentes = new Set(
+        acessoRows
+          .filter((r) => r[1] === funcionarioId && r[3] === "Ativo")
+          .map((r) => r[2])
+      );
+
+      const dataConcessao = hoje;
+      for (const ferramentaId of ferramentaIds) {
+        if (!acessosExistentes.has(ferramentaId)) {
+          const acId = `ac${Date.now()}-${ferramentaId}`;
           await appendSheetRow("acessos!A:F", [
-            acessoId,
+            acId,
             funcionarioId,
             ferramentaId,
-            "Pendente concessão",
-            "",
-            "Monday/n8n",
+            "Ativo",
+            dataConcessao,
+            "monday-automation",
           ]);
+          // Pequeno delay para evitar IDs duplicados
+          await new Promise((r) => setTimeout(r, 50));
         }
       }
 
-      // 4. Registrar movimentação
+      // Registrar movimentação
+      const movId = `mov${Date.now()}`;
       await appendSheetRow("movimentacoes!A:E", [
-        movimentacaoId,
+        movId,
         funcionarioId,
         "onboarding",
-        dataEvento || new Date().toISOString().split("T")[0],
-        "Pendente",
+        hoje,
+        "concluido",
       ]);
 
       return NextResponse.json({
         success: true,
         tipo: "onboarding",
         funcionarioId,
-        mensagem: `Onboarding de ${nome} registrado com sucesso`,
+        nome,
+        acessosCriados: ferramentaIds.filter((id) => !acessosExistentes.has(id)).length,
+        perfilAplicado: perfil ? perfil[1] : "padrão mínimo",
       });
-    } else if (tipo === "offboarding") {
-      // 1. Buscar funcionário pelo email
-      const funcRows = await getSheetData("funcionarios!A2:I");
-      const funcRow = funcRows.find((row) => row[2]?.toLowerCase() === email?.toLowerCase());
+    }
 
-      if (!funcRow) {
-        return NextResponse.json(
-          { error: `Funcionário com email ${email} não encontrado` },
-          { status: 404 }
-        );
+    // ==================
+    // OFFBOARDING
+    // ==================
+    if (tipo === "offboarding") {
+      if (!funcionario) {
+        return NextResponse.json({
+          error: `Funcionário "${nome}" não encontrado na base para offboarding`,
+          tipo: "offboarding",
+          nome,
+        }, { status: 404 });
       }
 
-      const funcId = funcRow[0];
+      const funcionarioId = funcionario.id;
 
-      // 2. Atualizar status para Desligado
-      const rowIndex = funcRows.findIndex((row) => row[2]?.toLowerCase() === email?.toLowerCase());
-      const _sheetRow = rowIndex + 2; // +2 por causa do header e índice 0
-
-      await appendSheetRow("movimentacoes!A:E", [
-        movimentacaoId,
-        funcId,
-        "offboarding",
-        dataEvento || new Date().toISOString().split("T")[0],
-        "Em andamento",
-      ]);
-
-      // 3. Criar registro de offboarding
-      const offboardingId = `off${timestamp}`;
-      await appendSheetRow("offboardings!A:G", [
-        offboardingId,
-        funcId,
-        dataEvento || new Date().toISOString().split("T")[0],
-        new Date().toISOString().split("T")[0],
-        "",
-        "Em andamento",
-        "u01",
-      ]);
-
-      // 4. Marcar acessos ativos como Pendente remoção
-      const acessosRows = await getSheetData("acessos!A2:F");
-      const acessosAtivos = acessosRows
-        .map((row, idx) => ({ row, idx }))
-        .filter(({ row }) => row[1] === funcId && row[3] === "Ativo");
-
-      for (const { row, idx } of acessosAtivos) {
-        const _sheetRowAcesso = idx + 2;
-        // Append novo registro com status atualizado
-        await appendSheetRow("acessos!A:F", [
-          `${row[0]}_off`,
-          funcId,
-          row[2],
-          "Pendente remoção",
-          row[4] || "",
-          row[5] || "",
+      // Atualizar status do funcionário para Desligado
+      const rowIndex = funcRows.findIndex((r) => r[0] === funcionarioId);
+      if (rowIndex !== -1) {
+        const sheetRow = rowIndex + 2;
+        await updateSheetRow(`funcionarios!A${sheetRow}:I${sheetRow}`, [
+          funcionario.id,
+          funcionario.nome,
+          funcionario.email,
+          funcionario.cargo,
+          funcionario.area,
+          funcionario.gestorId,
+          "Desligado",
+          funcionario.dataEntrada,
+          hoje,
         ]);
       }
+
+      // Marcar acessos ativos como "Pendente remoção"
+      for (let i = 0; i < acessoRows.length; i++) {
+        const row = acessoRows[i];
+        if (row[1] === funcionarioId && row[3] === "Ativo") {
+          const sheetRow = i + 2;
+          await updateSheetRow(`acessos!A${sheetRow}:F${sheetRow}`, [
+            row[0], row[1], row[2], "Pendente remoção", row[4] || "", row[5] || "",
+          ]);
+          await new Promise((r) => setTimeout(r, 50));
+        }
+      }
+
+      // Criar registro de offboarding
+      const offId = `off${Date.now()}`;
+      await appendSheetRow("offboardings!A:G", [
+        offId,
+        funcionarioId,
+        hoje,
+        hoje,
+        "",
+        "Em andamento",
+        "monday-automation",
+      ]);
+
+      // Registrar movimentação
+      const movId = `mov${Date.now()}`;
+      await appendSheetRow("movimentacoes!A:E", [
+        movId,
+        funcionarioId,
+        "offboarding",
+        hoje,
+        "em andamento",
+      ]);
 
       return NextResponse.json({
         success: true,
         tipo: "offboarding",
-        funcionarioId: funcId,
-        offboardingId,
-        mensagem: `Offboarding de ${nome} registrado. ${acessosAtivos.length} acessos marcados para remoção.`,
+        funcionarioId,
+        nome: funcionario.nome,
+        offboardingId: offId,
       });
     }
 
-    return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
+    return NextResponse.json({ error: "Tipo inválido. Use onboarding ou offboarding." }, { status: 400 });
+
   } catch (error) {
     console.error("Erro na movimentação:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
