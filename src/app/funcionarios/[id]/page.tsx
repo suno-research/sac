@@ -3,15 +3,23 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Mail, Building2, User, ExternalLink, ClipboardList, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Mail, Building2, User, ExternalLink, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusFuncionarioBadge, StatusAcessoBadge } from "@/components/layout/StatusBadge";
-
-type StatusAcesso = "Ativo" | "Pendente concessão" | "Pendente remoção" | "Sem acesso";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Avatar } from "@/components/ui/avatar";
 import { thFirst, thMid, thLast, tdFirst, tdMid, tdLast, trHover } from "@/lib/table-classes";
+
+type StatusAcesso = "Ativo" | "Pendente concessão" | "Pendente remoção" | "Sem acesso";
 
 interface Funcionario {
   id: string;
@@ -75,6 +83,18 @@ export default function FuncionarioDetailPage() {
   const [offboardings, setOffboardings] = useState<Offboarding[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal adicionar acesso
+  const [modalAdicionar, setModalAdicionar] = useState(false);
+  const [ferramentaSelecionada, setFerramentaSelecionada] = useState<string>("");
+  const [adicionando, setAdicionando] = useState(false);
+
+  // Modal remover acesso
+  const [modalRemover, setModalRemover] = useState(false);
+  const [acessoParaRemover, setAcessoParaRemover] = useState<AcessoFuncionario | null>(null);
+  const [removendo, setRemovendo] = useState(false);
+
+  const [erro, setErro] = useState("");
+
   useEffect(() => {
     Promise.all([
       fetch("/api/funcionarios").then((r) => r.json()),
@@ -103,17 +123,83 @@ export default function FuncionarioDetailPage() {
   const getNomeFuncionario = (funcionarioId: string) =>
     funcionarios.find((f) => f.id === funcionarioId)?.nome ?? "—";
 
-  if (loading) {
-    return <DetailSkeleton />;
+  // Ferramentas que o funcionário ainda não tem acesso ativo
+  const ferramentasIds = new Set(acessos.filter(a => a.status === "Ativo").map(a => a.ferramentaId));
+  const ferramentasDisponiveis = ferramentas.filter(f => !ferramentasIds.has(f.id));
+
+  async function adicionarAcesso() {
+    if (!ferramentaSelecionada || !funcionario) return;
+    setErro("");
+    setAdicionando(true);
+    try {
+      const res = await fetch("/api/acessos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ funcionarioId: funcionario.id, ferramentaId: ferramentaSelecionada }),
+      });
+      if (!res.ok) throw new Error();
+      const novo = await res.json();
+      setAcessos(prev => [...prev, novo]);
+      setFerramentaSelecionada("");
+      setModalAdicionar(false);
+    } catch {
+      setErro("Erro ao adicionar acesso. Tente novamente.");
+    } finally {
+      setAdicionando(false);
+    }
   }
+
+  async function removerAcesso() {
+    if (!acessoParaRemover) return;
+    setRemovendo(true);
+    try {
+      const res = await fetch(`/api/acessos?id=${acessoParaRemover.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setAcessos(prev => prev.filter(a => a.id !== acessoParaRemover.id));
+      setModalRemover(false);
+    } catch {
+      setErro("Erro ao remover acesso. Tente novamente.");
+    } finally {
+      setRemovendo(false);
+    }
+  }
+
+  async function iniciarOffboarding() {
+    if (!funcionario) return;
+    setIniciandoOffboarding(true);
+    try {
+      const hoje = new Date().toISOString().split("T")[0];
+      const offId = `off${Date.now()}`;
+      await fetch("/api/offboardings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: offId, funcionarioId: funcionario.id, dataDesligamento: hoje, dataInicio: hoje, dataConclusao: "", status: "Em andamento", responsavelId: "" }),
+      });
+      await fetch("/api/acessos/update-batch", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ funcionarioId: funcionario.id, novoStatus: "Pendente remoção" }),
+      });
+      await fetch(`/api/funcionarios/${funcionario.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Desligado", dataDesligamento: hoje }),
+      });
+      router.push(`/offboarding/${offId}`);
+    } catch (e) {
+      console.error("Erro ao iniciar offboarding", e);
+    } finally {
+      setIniciandoOffboarding(false);
+    }
+  }
+
+  if (loading) return <DetailSkeleton />;
 
   if (!funcionario) {
     return (
       <div className="space-y-4 max-w-5xl">
         <Button variant="ghost" size="sm" asChild className="pl-0">
-          <Link href="/funcionarios">
-            <ArrowLeft className="h-4 w-4" /> Funcionários
-          </Link>
+          <Link href="/funcionarios"><ArrowLeft className="h-4 w-4" /> Funcionários</Link>
         </Button>
         <p className="text-muted-foreground">Funcionário não encontrado.</p>
       </div>
@@ -124,76 +210,28 @@ export default function FuncionarioDetailPage() {
   const offboarding = offboardings.find((o) => o.funcionarioId === funcionario.id);
 
   const grupos: Record<string, AcessoFuncionario[]> = {
-    Ativo: [],
-    "Pendente concessão": [],
-    "Pendente remoção": [],
-    "Sem acesso": [],
+    Ativo: [], "Pendente concessão": [], "Pendente remoção": [], "Sem acesso": [],
   };
   acessos.forEach((a) => grupos[a.status]?.push(a));
 
-  async function iniciarOffboarding() {
-    if (!funcionario) return;
-    setIniciandoOffboarding(true);
-    try {
-      const hoje = new Date().toISOString().split("T")[0];
-      const offId = `off${Date.now()}`;
-
-      await fetch("/api/offboardings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: offId,
-          funcionarioId: funcionario.id,
-          dataDesligamento: hoje,
-          dataInicio: hoje,
-          dataConclusao: "",
-          status: "Em andamento",
-          responsavelId: "",
-        }),
-      });
-
-      await fetch("/api/acessos/update-batch", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ funcionarioId: funcionario.id, novoStatus: "Pendente remoção" }),
-      });
-
-      await fetch(`/api/funcionarios/${funcionario.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Desligado", dataDesligamento: hoje }),
-      });
-
-      router.push(`/offboarding/${offId}`);
-    } catch (e) {
-      console.error("Erro ao iniciar offboarding", e);
-    } finally {
-      setIniciandoOffboarding(false);
-    }
-  }
-
   const statsSummary = [
     { label: "Ativos", count: grupos["Ativo"].length, className: "text-success bg-success-muted" },
-    {
-      label: "Pend. concessão",
-      count: grupos["Pendente concessão"].length,
-      className: "text-warning bg-warning-muted",
-    },
-    {
-      label: "Pend. remoção",
-      count: grupos["Pendente remoção"].length,
-      className: "text-destructive bg-destructive-muted",
-    },
+    { label: "Pend. concessão", count: grupos["Pendente concessão"].length, className: "text-warning bg-warning-muted" },
+    { label: "Pend. remoção", count: grupos["Pendente remoção"].length, className: "text-destructive bg-destructive-muted" },
     { label: "Sem acesso", count: grupos["Sem acesso"].length, className: "text-muted-foreground bg-muted" },
   ];
+
+  const ferramentasAgrupadas = ferramentasDisponiveis.reduce<Record<string, Ferramenta[]>>((acc, f) => {
+    if (!acc[f.categoria]) acc[f.categoria] = [];
+    acc[f.categoria].push(f);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild className="pl-0">
-          <Link href="/funcionarios">
-            <ArrowLeft className="h-4 w-4" /> Funcionários
-          </Link>
+          <Link href="/funcionarios"><ArrowLeft className="h-4 w-4" /> Funcionários</Link>
         </Button>
         <span className="text-muted-foreground/50">/</span>
         <span className="text-sm text-muted-foreground">{funcionario.nome}</span>
@@ -227,46 +265,25 @@ export default function FuncionarioDetailPage() {
                 </div>
               </div>
             </div>
-
             <div className="flex items-center gap-3 flex-wrap">
               {funcionario.status === "Ativo" && !offboarding && (
-                <Button
-                  variant="destructive"
-                  size="default"
-                  className="gap-2"
-                  onClick={iniciarOffboarding}
-                  disabled={iniciandoOffboarding}
-                >
-                  {iniciandoOffboarding ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ClipboardList className="h-4 w-4" />
-                  )}
+                <Button variant="destructive" size="default" className="gap-2" onClick={iniciarOffboarding} disabled={iniciandoOffboarding}>
+                  {iniciandoOffboarding ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
                   Iniciar Offboarding
                 </Button>
               )}
               {offboarding && offboarding.status === "Em andamento" && (
-                <Button
-                  variant="outline"
-                  size="default"
-                  asChild
-                  className="gap-2 border-warning/40 text-warning hover:bg-warning-muted"
-                >
-                  <Link href={`/offboarding/${offboarding.id}`}>
-                    <ClipboardList className="h-4 w-4" /> Ver checklist de offboarding
-                  </Link>
+                <Button variant="outline" size="default" asChild className="gap-2 border-warning/40 text-warning hover:bg-warning-muted">
+                  <Link href={`/offboarding/${offboarding.id}`}><ClipboardList className="h-4 w-4" /> Ver checklist de offboarding</Link>
                 </Button>
               )}
               {offboarding && offboarding.status === "Concluído" && (
                 <Button variant="outline" size="default" asChild className="gap-2">
-                  <Link href={`/offboarding/${offboarding.id}`}>
-                    <ClipboardList className="h-4 w-4" /> Ver offboarding concluído
-                  </Link>
+                  <Link href={`/offboarding/${offboarding.id}`}><ClipboardList className="h-4 w-4" /> Ver offboarding concluído</Link>
                 </Button>
               )}
             </div>
           </div>
-
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-8 border-t border-border">
             {statsSummary.map((s) => (
               <div key={s.label} className={`rounded-xl p-5 ${s.className}`}>
@@ -280,7 +297,19 @@ export default function FuncionarioDetailPage() {
 
       <Card className="overflow-hidden">
         <CardHeader>
-          <CardTitle>Ferramentas e acessos ({acessos.length})</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Ferramentas e acessos ({acessos.length})</CardTitle>
+            {funcionario.status === "Ativo" && (
+              <Button
+                size="sm"
+                onClick={() => { setFerramentaSelecionada(""); setErro(""); setModalAdicionar(true); }}
+                style={{ background: "#D42126", color: "white" }}
+                className="gap-1.5"
+              >
+                <Plus className="h-4 w-4" /> Adicionar acesso
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -292,58 +321,139 @@ export default function FuncionarioDetailPage() {
                   <th className={thMid}>Tipo</th>
                   <th className={thMid}>Status</th>
                   <th className={thMid}>Concessão</th>
-                  <th className={thLast}>Concedido por</th>
+                  <th className={thMid}>Concedido por</th>
+                  <th className={thLast} />
                 </tr>
               </thead>
               <tbody>
-                {acessos.map((acesso) => {
-                  const ferramenta = getFerramentaById(acesso.ferramentaId);
-                  if (!ferramenta) return null;
-                  const concedidoPorNome = acesso.concedidoPor
-                    ? getNomeFuncionario(acesso.concedidoPor) !== "—"
-                      ? getNomeFuncionario(acesso.concedidoPor)
-                      : acesso.concedidoPor
-                    : "—";
-                  return (
-                    <tr key={acesso.id} className={trHover}>
-                      <td className={tdFirst}>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground">{ferramenta.nome}</p>
-                          <a
-                            href={ferramenta.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-accent transition-colors"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        </div>
-                      </td>
-                      <td className={tdMid}>
-                        <Badge variant="secondary">{ferramenta.categoria}</Badge>
-                      </td>
-                      <td className={tdMid}>
-                        <Badge variant={ferramenta.tipo === "Passbolt" ? "warning" : "secondary"}>
-                          {ferramenta.tipo}
-                        </Badge>
-                      </td>
-                      <td className={tdMid}>
-                        <StatusAcessoBadge status={acesso.status} />
-                      </td>
-                      <td className={tdMid}>
-                        {acesso.dataConcessao
-                          ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR")
-                          : "—"}
-                      </td>
-                      <td className={tdLast}>{concedidoPorNome}</td>
-                    </tr>
-                  );
-                })}
+                {acessos.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="pl-10 pr-10 py-14 text-center text-[15px] text-muted-foreground">
+                      Nenhum acesso cadastrado.
+                    </td>
+                  </tr>
+                ) : (
+                  acessos.map((acesso) => {
+                    const ferramenta = getFerramentaById(acesso.ferramentaId);
+                    if (!ferramenta) return null;
+                    const concedidoPorNome = acesso.concedidoPor
+                      ? getNomeFuncionario(acesso.concedidoPor) !== "—"
+                        ? getNomeFuncionario(acesso.concedidoPor)
+                        : acesso.concedidoPor
+                      : "—";
+                    return (
+                      <tr key={acesso.id} className={trHover}>
+                        <td className={tdFirst}>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-foreground">{ferramenta.nome}</p>
+                            <a href={ferramenta.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                        </td>
+                        <td className={tdMid}><Badge variant="secondary">{ferramenta.categoria}</Badge></td>
+                        <td className={tdMid}><Badge variant={ferramenta.tipo === "Passbolt" ? "warning" : "secondary"}>{ferramenta.tipo}</Badge></td>
+                        <td className={tdMid}><StatusAcessoBadge status={acesso.status} /></td>
+                        <td className={tdMid}>
+                          {acesso.dataConcessao ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
+                        </td>
+                        <td className={tdMid}>{concedidoPorNome}</td>
+                        <td className={`${tdLast} text-right`}>
+                          {funcionario.status === "Ativo" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => { setAcessoParaRemover(acesso); setErro(""); setModalRemover(true); }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal — Adicionar acesso */}
+      <Dialog open={modalAdicionar} onOpenChange={setModalAdicionar}>
+        <DialogContent className="max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Adicionar acesso — {funcionario.nome}</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            {ferramentasDisponiveis.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Este funcionário já tem acesso a todas as ferramentas cadastradas.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Selecione a ferramenta para conceder acesso:</p>
+                {Object.entries(ferramentasAgrupadas).map(([cat, ferrs]) => (
+                  <div key={cat}>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{cat}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ferrs.map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setFerramentaSelecionada(f.id)}
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium text-left transition-all"
+                          style={{
+                            borderColor: ferramentaSelecionada === f.id ? "#D42126" : "#E5E7EB",
+                            background: ferramentaSelecionada === f.id ? "#FEF2F2" : "white",
+                            color: ferramentaSelecionada === f.id ? "#D42126" : "#374151",
+                          }}
+                        >
+                          <span className="truncate">{f.nome}</span>
+                          <Badge variant={f.tipo === "Passbolt" ? "warning" : "secondary"} className="text-[10px] ml-auto flex-shrink-0">{f.tipo}</Badge>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {erro && <p className="text-sm font-medium" style={{ color: "#D42126" }}>{erro}</p>}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalAdicionar(false)}>Cancelar</Button>
+            <Button
+              disabled={!ferramentaSelecionada || adicionando}
+              onClick={adicionarAcesso}
+              style={{ background: "#D42126", color: "white" }}
+            >
+              {adicionando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conceder acesso"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal — Confirmar remoção */}
+      <Dialog open={modalRemover} onOpenChange={setModalRemover}>
+        <DialogContent className="max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Remover acesso</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja remover o acesso de <strong className="text-foreground">{funcionario.nome}</strong> à ferramenta{" "}
+              <strong className="text-foreground">{acessoParaRemover ? getFerramentaById(acessoParaRemover.ferramentaId)?.nome : ""}</strong>?
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalRemover(false)}>Cancelar</Button>
+            <Button disabled={removendo} onClick={removerAcesso} style={{ background: "#D42126", color: "white" }}>
+              {removendo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sim, remover"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
