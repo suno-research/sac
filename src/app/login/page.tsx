@@ -3,7 +3,6 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { SunoLogo } from "@/components/layout/SunoLogo";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -37,9 +36,11 @@ export default function LoginPage() {
           textAlign: "center",
         }}
       >
-        <div className="mb-8 flex justify-center">
-          <SunoLogo height={40} variant="light" />
-        </div>
+        <img
+          src="/suno-logo.png"
+          alt="Suno"
+          style={{ height: 48, width: "auto", marginBottom: 32, display: "inline-block" }}
+        />
 
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
           Suno Access Control
