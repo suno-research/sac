@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "setup-sheets": "npx tsx src/scripts/setup-sheets.ts",
-    "seed-sheets": "npx tsx src/scripts/seed-sheets.ts"
+    "seed-sheets": "npx tsx src/scripts/seed-sheets.ts",
+    "import-data": "ts-node --project tsconfig.json scripts/import-data.ts",
+    "create-admins": "ts-node --project tsconfig.json scripts/create-admins.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
@@ -39,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "tsx": "^4.22.3",
     "typescript": "^5"
   }
