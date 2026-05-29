@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Pencil, Plus, Trash2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -57,6 +58,9 @@ function PerfisSkeleton() {
 }
 
 export default function PerfisPage() {
+  const { data: session } = useSession();
+  const isTI = session?.user?.role === "ti";
+
   const [perfis, setPerfis] = useState<PerfilPadrao[]>([]);
   const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,9 +219,11 @@ export default function PerfisPage() {
         title="Perfis Padrão"
         description="Pacotes de acesso pré-definidos por cargo. Usados no onboarding para agilizar a concessão de ferramentas."
         action={
-          <Button onClick={() => { setNovoPerfil(PERFIL_VAZIO); setFerramentasNovo([]); setErro(""); setModalNovo(true); }} style={{ background: "#D42126", color: "white" }}>
-            <Plus className="h-4 w-4 mr-1" /> Novo perfil
-          </Button>
+          isTI ? (
+            <Button onClick={() => { setNovoPerfil(PERFIL_VAZIO); setFerramentasNovo([]); setErro(""); setModalNovo(true); }} style={{ background: "#D42126", color: "white" }}>
+              <Plus className="h-4 w-4 mr-1" /> Novo perfil
+            </Button>
+          ) : undefined
         }
       />
 
@@ -238,12 +244,16 @@ export default function PerfisPage() {
                   <Badge variant="secondary" className="mt-3">{perfil.area}</Badge>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => abrirEdicao(perfil)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => abrirConfirmDelete(perfil)} className="text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {isTI && (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => abrirEdicao(perfil)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => abrirConfirmDelete(perfil)} className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="px-8 py-8 flex-1 flex flex-col">

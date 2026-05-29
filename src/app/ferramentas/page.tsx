@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -70,6 +71,9 @@ function TableSkeleton() {
 }
 
 export default function FerramentasPage() {
+  const { data: session } = useSession();
+  const isTI = session?.user?.role === "ti";
+
   const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
   const [acessos, setAcessos] = useState<AcessoFuncionario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,10 +217,12 @@ export default function FerramentasPage() {
         title="Ferramentas"
         description={`${ferramentas.length} ferramentas cadastradas`}
         action={
-          <Button onClick={() => { setNovaFerramenta(FERRAMENTA_VAZIA); setErro(""); setModalAberto(true); }} style={{ background: "#D42126", color: "white" }}>
-            <Plus className="h-4 w-4 mr-1" />
-            Nova ferramenta
-          </Button>
+          isTI ? (
+            <Button onClick={() => { setNovaFerramenta(FERRAMENTA_VAZIA); setErro(""); setModalAberto(true); }} style={{ background: "#D42126", color: "white" }}>
+              <Plus className="h-4 w-4 mr-1" />
+              Nova ferramenta
+            </Button>
+          ) : undefined
         }
       />
 
@@ -284,14 +290,16 @@ export default function FerramentasPage() {
                     </td>
                     <td className={`${tdMid} font-medium text-foreground tabular-nums`}>{ativos}</td>
                     <td className={`${tdLast} text-right`}>
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => abrirEdicao(f)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => abrirConfirmDelete(f)} className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {isTI && (
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => abrirEdicao(f)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => abrirConfirmDelete(f)} className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

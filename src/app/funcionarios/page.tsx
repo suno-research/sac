@@ -47,6 +47,7 @@ function TableSkeleton() {
 export default function FuncionariosPage() {
   const { data: session } = useSession();
   const isGestor = session?.user?.role === "gestor";
+  const isTI = session?.user?.role === "ti";
   const router = useRouter();
   const userEmail = session?.user?.email || "";
 
@@ -127,7 +128,7 @@ export default function FuncionariosPage() {
             : `${funcionarios.length} funcionários cadastrados`
         }
         action={
-          !isGestor ? (
+          isTI ? (
             <Button
               onClick={() => router.push("/funcionarios/novo")}
               style={{ background: "#D42126", color: "white" }}

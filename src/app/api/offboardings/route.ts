@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { getSheetData, appendSheetRow, updateSheetRow } from "@/lib/sheets";
 
 export async function GET() {
@@ -21,6 +22,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getServerSession();
+  if (session?.user?.role !== "ti") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     await appendSheetRow("offboardings!A:G", [
@@ -40,6 +46,11 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const session = await getServerSession();
+  if (session?.user?.role !== "ti") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { id, status, dataConclusao } = body;

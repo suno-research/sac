@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { getSheetData, appendSheetRow } from "@/lib/sheets";
 
 export async function GET() {
@@ -23,6 +24,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getServerSession();
+  if (!session?.user?.role || session.user.role !== "ti") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { nome, email, cargo, area, gestorId, dataEntrada } = body;

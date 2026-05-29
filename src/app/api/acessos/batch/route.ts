@@ -3,8 +3,12 @@ import { appendSheetRow } from "@/lib/sheets";
 import { getServerSession } from "next-auth";
 
 export async function POST(request: Request) {
+  const session = await getServerSession();
+  if (session?.user?.role !== "ti") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   try {
-    const session = await getServerSession();
     const concedidoPor = session?.user?.email || "sistema";
 
     const body = await request.json();

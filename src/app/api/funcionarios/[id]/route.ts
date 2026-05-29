@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { getSheetData, updateSheetRow } from "@/lib/sheets";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getServerSession();
+  if (session?.user?.role !== "ti") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { id } = await params;

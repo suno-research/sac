@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Mail, Building2, User, ExternalLink, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,8 @@ function DetailSkeleton() {
 export default function FuncionarioDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
+  const isTI = session?.user?.role === "ti";
   const id = params.id as string;
 
   const [iniciandoOffboarding, setIniciandoOffboarding] = useState(false);
@@ -268,7 +271,7 @@ export default function FuncionarioDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              {funcionario.status === "Ativo" && !offboarding && (
+              {isTI && funcionario.status === "Ativo" && !offboarding && (
                 <Button variant="destructive" size="default" className="gap-2" onClick={iniciarOffboarding} disabled={iniciandoOffboarding}>
                   {iniciandoOffboarding ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
                   Iniciar Offboarding
@@ -301,7 +304,7 @@ export default function FuncionarioDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Ferramentas e acessos ({acessos.length})</CardTitle>
-            {funcionarioAtivo && (
+            {isTI && funcionarioAtivo && (
               <Button
                 size="sm"
                 onClick={() => { setFerramentaSelecionada(""); setErro(""); setModalAdicionar(true); }}
@@ -374,7 +377,7 @@ export default function FuncionarioDetailPage() {
                         </td>
                         <td className={tdMid}>{concedidoPorNome}</td>
                         <td className="sticky right-0 z-10 min-w-[4.5rem] bg-card group-hover:bg-muted/60 px-3 py-6 text-center border-l border-border/60">
-                          {funcionarioAtivo ? (
+                          {isTI && funcionarioAtivo ? (
                             <button
                               type="button"
                               onClick={() => { setAcessoParaRemover(acesso); setErro(""); setModalRemover(true); }}

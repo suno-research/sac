@@ -21,8 +21,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getServerSession();
+  if (session?.user?.role !== "ti") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   try {
-    const session = await getServerSession();
     const concedidoPor = session?.user?.email || "sistema";
     const body = await request.json();
     const { funcionarioId, ferramentaId } = body;
@@ -46,6 +50,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const session = await getServerSession();
+  if (session?.user?.role !== "ti") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
