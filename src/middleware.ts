@@ -29,6 +29,7 @@ export const config = {
     "/funcionarios/:path*",
     "/ferramentas/:path*",
     "/perfis/:path*",
+    "/pendencias/:path*",
     "/offboarding/:path*",
   ],
 };

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Users, Wrench, Shield } from "lucide-react";
+import { LayoutDashboard, Users, Wrench, Shield, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SunoLogo } from "@/components/layout/SunoLogo";
 
@@ -12,10 +13,26 @@ const navItems = [
   { href: "/funcionarios", label: "Funcionários", icon: Users },
   { href: "/ferramentas", label: "Ferramentas", icon: Wrench },
   { href: "/perfis", label: "Perfis Padrão", icon: Shield },
+  { href: "/pendencias", label: "Pendências", icon: AlertTriangle },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [pendenciasCount, setPendenciasCount] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/acessos")
+      .then((r) => r.json())
+      .then((acessos) => {
+        if (!Array.isArray(acessos)) return;
+        const count = acessos.filter(
+          (a: { status: string }) =>
+            a.status === "Pendente concessão" || a.status === "Pendente remoção"
+        ).length;
+        setPendenciasCount(count);
+      })
+      .catch(() => setPendenciasCount(0));
+  }, [pathname]);
 
   return (
     <aside
@@ -55,7 +72,12 @@ export function Sidebar() {
                 )}
               >
                 <Icon className={cn("h-5 w-5 flex-shrink-0", active && "text-accent")} />
-                {label}
+                <span className="flex-1">{label}</span>
+                {href === "/pendencias" && pendenciasCount > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-semibold text-white">
+                    {pendenciasCount}
+                  </span>
+                )}
               </span>
             </Link>
           );
