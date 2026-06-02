@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getSheetData, updateSheetRow } from "@/lib/sheets";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (session?.user?.role !== "ti") {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
