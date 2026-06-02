@@ -100,15 +100,17 @@ export default function PendenciasPage() {
   async function resolverAcesso(acessoId: string, novoStatus: string) {
     setResolvendo(acessoId);
     try {
-      const rows = await fetch("/api/acessos").then((r) => r.json());
-      const acesso = rows.find((a: Acesso) => a.id === acessoId);
-      if (!acesso) return;
-
-      await fetch("/api/acessos/resolver", {
+      const res = await fetch("/api/acessos/resolver", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: acessoId, novoStatus }),
       });
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Erro ao resolver acesso:", err);
+        return;
+      }
 
       setAcessos((prev) =>
         prev.map((a) => (a.id === acessoId ? { ...a, status: novoStatus } : a))
