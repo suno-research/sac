@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Mail, Building2, User, ExternalLink, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, Mail, Building2, User, ExternalLink, ClipboardList, Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -97,6 +97,20 @@ export default function FuncionarioDetailPage() {
   const [removendo, setRemovendo] = useState(false);
 
   const [erro, setErro] = useState("");
+
+  // Modal editar funcionário
+  const [modalEditar, setModalEditar] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [formEdicao, setFormEdicao] = useState({
+    nome: "",
+    email: "",
+    cargo: "",
+    area: "",
+    gestorId: "",
+    status: "",
+    dataEntrada: "",
+    dataDesligamento: "",
+  });
 
   useEffect(() => {
     Promise.all([
@@ -196,6 +210,40 @@ export default function FuncionarioDetailPage() {
     }
   }
 
+  function abrirModalEditar() {
+    if (!funcionario) return;
+    setFormEdicao({
+      nome: funcionario.nome || "",
+      email: funcionario.email || "",
+      cargo: funcionario.cargo || "",
+      area: funcionario.area || "",
+      gestorId: funcionario.gestorId || "",
+      status: funcionario.status || "",
+      dataEntrada: funcionario.dataEntrada || "",
+      dataDesligamento: funcionario.dataDesligamento || "",
+    });
+    setModalEditar(true);
+  }
+
+  async function salvarEdicao() {
+    if (!funcionario) return;
+    setEditando(true);
+    try {
+      const res = await fetch(`/api/funcionarios/${funcionario.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formEdicao),
+      });
+      if (!res.ok) throw new Error();
+      setFuncionario({ ...funcionario, ...formEdicao });
+      setModalEditar(false);
+    } catch {
+      setErro("Erro ao salvar alterações. Tente novamente.");
+    } finally {
+      setEditando(false);
+    }
+  }
+
   if (loading) return <DetailSkeleton />;
 
   if (!funcionario) {
@@ -271,6 +319,16 @@ export default function FuncionarioDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
+              {isTI && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={abrirModalEditar}
+                  className="gap-1.5"
+                >
+                  <Pencil className="h-4 w-4" /> Editar
+                </Button>
+              )}
               {isTI && funcionario.status === "Ativo" && !offboarding && (
                 <Button variant="destructive" size="default" className="gap-2" onClick={iniciarOffboarding} disabled={iniciandoOffboarding}>
                   {iniciandoOffboarding ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
@@ -471,6 +529,118 @@ export default function FuncionarioDetailPage() {
             <Button variant="outline" onClick={() => setModalRemover(false)}>Cancelar</Button>
             <Button disabled={removendo} onClick={removerAcesso} style={{ background: "#D42126", color: "white" }}>
               {removendo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sim, remover"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal — Editar funcionário */}
+      <Dialog open={modalEditar} onOpenChange={setModalEditar}>
+        <DialogContent className="max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle>Editar funcionário</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Nome</label>
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.nome}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, nome: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Email</label>
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.email}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Cargo</label>
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.cargo}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, cargo: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Área</label>
+                <select
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.area}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, area: e.target.value }))}
+                >
+                  <option value="">Selecione...</option>
+                  <option value="TI">TI</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Financeiro">Financeiro</option>
+                  <option value="Editorial">Editorial</option>
+                  <option value="Comercial">Comercial</option>
+                  <option value="RH">RH</option>
+                  <option value="Jurídico">Jurídico</option>
+                  <option value="Operações">Operações</option>
+                  <option value="Consultoria">Consultoria</option>
+                  <option value="Tecnologia">Tecnologia</option>
+                  <option value="Asset">Asset</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Gestor</label>
+                <select
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.gestorId}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, gestorId: e.target.value }))}
+                >
+                  <option value="">Sem gestor</option>
+                  {funcionarios.filter(f => f.id !== funcionario?.id).map(f => (
+                    <option key={f.id} value={f.id}>{f.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Status</label>
+                <select
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.status}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, status: e.target.value }))}
+                >
+                  <option value="Ativo">Ativo</option>
+                  <option value="Desligado">Desligado</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Data de entrada</label>
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.dataEntrada}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, dataEntrada: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Data de desligamento</label>
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formEdicao.dataDesligamento}
+                  onChange={(e) => setFormEdicao(prev => ({ ...prev, dataDesligamento: e.target.value }))}
+                />
+              </div>
+            </div>
+            {erro && <p className="text-sm font-medium" style={{ color: "#D42126" }}>{erro}</p>}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalEditar(false)}>Cancelar</Button>
+            <Button
+              disabled={editando}
+              onClick={salvarEdicao}
+              style={{ background: "#D42126", color: "white" }}
+            >
+              {editando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
