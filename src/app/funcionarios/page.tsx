@@ -4,17 +4,10 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Trash2, Loader2 } from "lucide-react";
 import type { Funcionario, AreaEmpresa } from "@/lib/mock-data";
 import {
-  thFirst,
-  thMid,
-  thLast,
-  tdName,
-  tdCargo,
-  tdMid,
-  tdLast,
-  trHover,
+  thFirst, thMid, thLast, tdName, tdCargo, tdMid, tdLast, trHover,
 } from "@/lib/table-classes";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
@@ -22,16 +15,12 @@ import { Avatar } from "@/components/ui/avatar";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter,
+} from "@/components/ui/dialog";
 
 const areas: AreaEmpresa[] = [
-  "TI",
-  "Marketing",
-  "Financeiro",
-  "Editorial",
-  "Comercial",
-  "RH",
-  "Jurídico",
-  "Operações",
+  "TI", "Marketing", "Financeiro", "Editorial", "Comercial", "RH", "Jurídico", "Operações",
 ];
 
 function TableSkeleton() {
@@ -53,25 +42,31 @@ export default function FuncionariosPage() {
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aba, setAba] = useState<"ativos" | "desligados">("ativos");
   const [busca, setBusca] = useState("");
   const [area, setArea] = useState<string>("todas");
-  const [status, setStatus] = useState<string>("todos");
   const [gestor, setGestor] = useState<string>("todos");
+
+  // Modal arquivar
+  const [modalArquivar, setModalArquivar] = useState(false);
+  const [funcParaArquivar, setFuncParaArquivar] = useState<Funcionario | null>(null);
+  const [arquivando, setArquivando] = useState(false);
 
   useEffect(() => {
     fetch("/api/funcionarios")
       .then((r) => r.json())
       .then((data) => {
         const list = Array.isArray(data) ? (data as Funcionario[]) : [];
+        const ativos = list.filter((f) => f.status !== "Arquivado");
         if (isGestor) {
-          const gestorRecord = list.find((f) => f.email === userEmail);
+          const gestorRecord = ativos.find((f) => f.email === userEmail);
           if (gestorRecord) {
-            setFuncionarios(list.filter((f) => f.gestorId === gestorRecord.id));
+            setFuncionarios(ativos.filter((f) => f.gestorId === gestorRecord.id));
           } else {
             setFuncionarios([]);
           }
         } else {
-          setFuncionarios(list);
+          setFuncionarios(ativos);
         }
         setLoading(false);
       })
@@ -88,26 +83,47 @@ export default function FuncionariosPage() {
     return ids.map((id) => getFuncionarioById(id)).filter(Boolean);
   }, [funcionarios, getFuncionarioById]);
 
+  const ativos = useMemo(() => funcionarios.filter((f) => f.status === "Ativo"), [funcionarios]);
+  const desligados = useMemo(() => funcionarios.filter((f) => f.status === "Desligado"), [funcionarios]);
+  const listaAtual = aba === "ativos" ? ativos : desligados;
+
   const filtered = useMemo(() => {
-    return funcionarios.filter((f) => {
+    return listaAtual.filter((f) => {
       const matchBusca =
         f.nome.toLowerCase().includes(busca.toLowerCase()) ||
         f.email.toLowerCase().includes(busca.toLowerCase());
       const matchArea = area === "todas" || f.area === area;
-      const matchStatus = status === "todos" || f.status === status;
       const matchGestor = gestor === "todos" || f.gestorId === gestor;
-      return matchBusca && matchArea && matchStatus && matchGestor;
+      return matchBusca && matchArea && matchGestor;
     });
-  }, [funcionarios, busca, area, status, gestor]);
+  }, [listaAtual, busca, area, gestor]);
 
-  const hasFilters = busca || area !== "todas" || status !== "todos" || gestor !== "todos";
+  const hasFilters = busca || area !== "todas" || gestor !== "todos";
 
   const clearFilters = () => {
     setBusca("");
     setArea("todas");
-    setStatus("todos");
     setGestor("todos");
   };
+
+  async function arquivarFuncionario() {
+    if (!funcParaArquivar) return;
+    setArquivando(true);
+    try {
+      const res = await fetch("/api/funcionarios/arquivar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: funcParaArquivar.id }),
+      });
+      if (!res.ok) throw new Error();
+      setFuncionarios((prev) => prev.filter((f) => f.id !== funcParaArquivar.id));
+      setModalArquivar(false);
+    } catch {
+      console.error("Erro ao arquivar");
+    } finally {
+      setArquivando(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -122,23 +138,39 @@ export default function FuncionariosPage() {
     <PageMotion>
       <PageHeader
         title="Funcionários"
-        description={
-          isGestor
-            ? `${funcionarios.length} membros do seu time`
-            : `${funcionarios.length} funcionários cadastrados`
-        }
-        action={
-          isTI ? (
-            <Button
-              onClick={() => router.push("/funcionarios/novo")}
-              style={{ background: "#D42126", color: "white" }}
-              className="gap-2"
-            >
-              + Novo Funcionário
-            </Button>
-          ) : undefined
-        }
+        description={isGestor ? `${funcionarios.length} membros do seu time` : `${funcionarios.length} funcionários cadastrados`}
+        action={isTI ? (
+          <Button onClick={() => router.push("/funcionarios/novo")} style={{ background: "#D42126", color: "white" }} className="gap-2">
+            + Novo Funcionário
+          </Button>
+        ) : undefined}
       />
+
+      {/* Abas */}
+      {!isGestor && (
+        <div className="flex gap-1 p-1 bg-muted/40 rounded-xl w-fit border border-border mb-2">
+          <button
+            onClick={() => setAba("ativos")}
+            className="px-5 py-2 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: aba === "ativos" ? "#D42126" : "transparent",
+              color: aba === "ativos" ? "white" : "#6B7280",
+            }}
+          >
+            Ativos ({ativos.length})
+          </button>
+          <button
+            onClick={() => setAba("desligados")}
+            className="px-5 py-2 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: aba === "desligados" ? "#111827" : "transparent",
+              color: aba === "desligados" ? "white" : "#6B7280",
+            }}
+          >
+            Desligados ({desligados.length})
+          </button>
+        </div>
+      )}
 
       <FilterBar
         searchPlaceholder="Buscar por nome ou email..."
@@ -149,27 +181,11 @@ export default function FuncionariosPage() {
       >
         <FilterSelect value={area} onChange={setArea}>
           <option value="todas">Todas as áreas</option>
-          {areas.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect value={status} onChange={setStatus}>
-          <option value="todos">Todos os status</option>
-          <option value="Ativo">Ativo</option>
-          <option value="Desligado">Desligado</option>
+          {areas.map((a) => <option key={a} value={a}>{a}</option>)}
         </FilterSelect>
         <FilterSelect value={gestor} onChange={setGestor}>
           <option value="todos">Todos os gestores</option>
-          {gestores.map(
-            (g) =>
-              g && (
-                <option key={g.id} value={g.id}>
-                  {g.nome}
-                </option>
-              )
-          )}
+          {gestores.map((g) => g && <option key={g.id} value={g.id}>{g.nome}</option>)}
         </FilterSelect>
       </FilterBar>
 
@@ -208,22 +224,32 @@ export default function FuncionariosPage() {
                       </div>
                     </td>
                     <td className={tdCargo}>{func.cargo}</td>
-                    <td className={tdMid}>
-                      <Badge variant="secondary">{func.area}</Badge>
-                    </td>
+                    <td className={tdMid}><Badge variant="secondary">{func.area}</Badge></td>
                     <td className={tdMid}>{gestorNome}</td>
                     <td className={tdMid}>
                       <Badge variant={func.status === "Ativo" ? "success" : "muted"}>{func.status}</Badge>
                     </td>
                     <td className={tdMid}>
-                      {new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR")}
+                      {func.dataEntrada ? new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
                     </td>
                     <td className={`${tdLast} text-right`}>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/funcionarios/${func.id}`}>
-                          Ver acessos <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/funcionarios/${func.id}`}>
+                            Ver acessos <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        {isTI && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => { setFuncParaArquivar(func); setModalArquivar(true); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -233,10 +259,31 @@ export default function FuncionariosPage() {
         </table>
         {filtered.length > 0 && (
           <div className="px-10 py-5 border-t border-border text-sm text-muted-foreground">
-            Exibindo {filtered.length} de {funcionarios.length} funcionários
+            Exibindo {filtered.length} de {listaAtual.length} funcionários
           </div>
         )}
       </div>
+
+      {/* Modal — Confirmar arquivamento */}
+      <Dialog open={modalArquivar} onOpenChange={setModalArquivar}>
+        <DialogContent className="max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Arquivar funcionário</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja arquivar <strong className="text-foreground">{funcParaArquivar?.nome}</strong>?
+              O funcionário não aparecerá mais na lista mas o histórico será mantido.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalArquivar(false)}>Cancelar</Button>
+            <Button disabled={arquivando} onClick={arquivarFuncionario} style={{ background: "#D42126", color: "white" }}>
+              {arquivando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sim, arquivar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageMotion>
   );
 }
