@@ -136,7 +136,7 @@ export default function OffboardingPage() {
   const totalItens = itens.length;
   const removidos = itens.filter((i) => i.removido).length;
   const progresso = totalItens > 0 ? Math.round((removidos / totalItens) * 100) : 0;
-  const concluido = totalItens > 0 && removidos === totalItens;
+  const concluido = totalItens === 0 || removidos === totalItens;
 
   const toggleItem = (itemId: string) => {
     if (off?.status === "Concluído") return;
@@ -267,7 +267,7 @@ export default function OffboardingPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle>Acessos a remover</CardTitle>
-            {off.status === "Em andamento" && !concluido && (
+            {off.status === "Em andamento" && !concluido && totalItens > 0 && (
               <div className="flex items-center gap-1.5 text-xs text-warning bg-warning-muted border border-warning/20 rounded-full px-3.5 py-1.5">
                 <AlertCircle className="h-3 w-3" />
                 Marque todos os acessos para concluir
