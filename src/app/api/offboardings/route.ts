@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getSheetData, appendSheetRow, updateSheetRow } from "@/lib/sheets";
 
 export async function GET() {
@@ -22,7 +23,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (session?.user?.role !== "ti") {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (session?.user?.role !== "ti") {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
