@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getSheetData, appendSheetRow, updateSheetRow } from "@/lib/sheets";
 
 async function checkTI() {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   return session?.user?.role === "ti";
 }
 
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { nome, categoria, tipo, url, descricao } = body;
 
-    if (!nome || !categoria || !tipo || !url) {
+    if (!nome || !categoria || !tipo) {
       return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
     }
 
@@ -60,7 +61,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { id, nome, categoria, tipo, url, descricao } = body;
 
-    if (!id || !nome || !categoria || !tipo || !url) {
+    if (!id || !nome || !categoria || !tipo) {
       return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
     }
 
