@@ -1,0 +1,16 @@
+id,cargo,area,ferramentaIds,descricao
+pp01,Colaborador Asset,ASSET,"f01,f02,f08,f03",Perfil padrão para a área de Asset. 36 colaboradores.
+pp02,Colaborador Comercial,COMERCIAL,"f01,f02,f08,f03",Perfil padrão para a área de Comercial. 36 colaboradores.
+pp03,Colaborador Compliance,COMPLIANCE,"f01,f02,f08,f03",Perfil padrão para a área de Compliance. 11 colaboradores.
+pp04,Colaborador Consultoria,CONSULTORIA,"f01,f02,f08,f03",Perfil padrão para a área de Consultoria. 102 colaboradores.
+pp05,Colaborador Conteudo,CONTEUDO,"f01,f02,f08,f03",Perfil padrão para a área de Conteudo. 21 colaboradores.
+pp06,Colaborador Crm,CRM,"f01,f02,f08,f03",Perfil padrão para a área de Crm. 5 colaboradores.
+pp07,Colaborador Dados,DADOS,"f01,f02,f08,f03",Perfil padrão para a área de Dados. 10 colaboradores.
+pp08,Colaborador Diretoria,DIRETORIA,"f01,f02,f08,f03",Perfil padrão para a área de Diretoria. 3 colaboradores.
+pp09,Colaborador Eventos,EVENTOS,"f01,f02,f08,f03",Perfil padrão para a área de Eventos. 2 colaboradores.
+pp10,Colaborador Financeiro,FINANCEIRO,"f01,f02,f08,f03",Perfil padrão para a área de Financeiro. 15 colaboradores.
+pp11,Colaborador Marketing,MARKETING,"f01,f02,f08,f03",Perfil padrão para a área de Marketing. 26 colaboradores.
+pp12,Colaborador Produtos,PRODUTOS,"f01,f02,f08,f03",Perfil padrão para a área de Produtos. 6 colaboradores.
+pp13,Colaborador Research,RESEARCH,"f01,f02,f08,f03",Perfil padrão para a área de Research. 23 colaboradores.
+pp14,Colaborador Rh,RH,"f01,f02,f08,f03",Perfil padrão para a área de Rh. 6 colaboradores.
+pp15,Colaborador Tecnologia,TECNOLOGIA,"f01,f02,f08,f03",Perfil padrão para a área de Tecnologia. 15 colaboradores.

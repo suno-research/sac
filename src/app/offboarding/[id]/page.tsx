@@ -165,6 +165,16 @@ export default function OffboardingPage() {
         body: JSON.stringify({ id: off.id, status: "Concluído", dataConclusao: hoje }),
       });
 
+      await fetch("/api/movimentacoes/concluir", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          funcionarioId: func.id,
+          tipo: "offboarding",
+          status: "concluido",
+        }),
+      });
+
       router.push(`/funcionarios/${func.id}`);
     } catch (e) {
       console.error("Erro ao concluir offboarding", e);
