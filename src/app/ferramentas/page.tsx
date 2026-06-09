@@ -119,7 +119,7 @@ export default function FerramentasPage() {
   const hasFilters = busca || categoria !== "todas" || tipo !== "todos";
 
   async function criarFerramenta() {
-    if (!novaFerramenta.nome || !novaFerramenta.categoria || !novaFerramenta.tipo || !novaFerramenta.url) {
+    if (!novaFerramenta.nome || !novaFerramenta.categoria || !novaFerramenta.tipo) {
       setErro("Preencha todos os campos obrigatórios.");
       return;
     }
@@ -347,7 +347,7 @@ export default function FerramentasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>URL *</Label>
+              <Label>URL</Label>
               <Input placeholder="https://..." value={novaFerramenta.url} onChange={(e) => setNovaFerramenta((p) => ({ ...p, url: e.target.value }))} />
             </div>
             <div className="space-y-2">
