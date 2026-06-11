@@ -64,7 +64,7 @@ export const authOptions: AuthOptions = {
         const admin = admins.find(
           (a) => a.email === profile.email?.toLowerCase()
         );
-        token.role = admin ? admin.role : "gestor";
+        token.role = admin ? admin.role : "user";
       }
       return token;
     },

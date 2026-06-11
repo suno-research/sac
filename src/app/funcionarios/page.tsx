@@ -36,6 +36,7 @@ function TableSkeleton() {
 export default function FuncionariosPage() {
   const { data: session } = useSession();
   const isGestor = session?.user?.role === "gestor";
+  const isUser = session?.user?.role === "user";
   const isTI = session?.user?.role === "ti";
   const router = useRouter();
   const userEmail = session?.user?.email || "";
@@ -65,13 +66,15 @@ export default function FuncionariosPage() {
           } else {
             setFuncionarios([]);
           }
+        } else if (isUser) {
+          setFuncionarios(ativos.filter((f) => f.email === userEmail));
         } else {
           setFuncionarios(ativos);
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [isGestor, userEmail]);
+  }, [isGestor, isUser, userEmail]);
 
   const getFuncionarioById = useMemo(() => {
     const map = new Map(funcionarios.map((f) => [f.id, f]));
@@ -147,7 +150,7 @@ export default function FuncionariosPage() {
       />
 
       {/* Abas */}
-      {!isGestor && (
+      {!isGestor && !isUser && (
         <div className="flex gap-1 p-1 bg-muted/40 rounded-xl w-fit border border-border mb-2">
           <button
             onClick={() => setAba("ativos")}
@@ -172,6 +175,7 @@ export default function FuncionariosPage() {
         </div>
       )}
 
+      {(isTI || isGestor) && (
       <FilterBar
         searchPlaceholder="Buscar por nome ou email..."
         searchValue={busca}
@@ -188,6 +192,7 @@ export default function FuncionariosPage() {
           {gestores.map((g) => g && <option key={g.id} value={g.id}>{g.nome}</option>)}
         </FilterSelect>
       </FilterBar>
+      )}
 
       <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden overflow-x-auto">
         <table className="w-full">
