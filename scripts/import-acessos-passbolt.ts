@@ -72,7 +72,7 @@ async function appendSheetRowWithRetry(range: string, values: string[]): Promise
       const status = (error as { code?: number; status?: number })?.code
         ?? (error as { status?: number })?.status;
       if (status === 429 && attempt < 4) {
-        console.log("  ⏳ Rate limit atingido, aguardando 65s...");
+        log("  ⏳ Rate limit atingido, aguardando 65s...");
         await sleep(65000);
         continue;
       }
@@ -81,12 +81,28 @@ async function appendSheetRowWithRetry(range: string, values: string[]): Promise
   }
 }
 
+const logLinhas: string[] = [];
+const ferrsNaoEncontradas: string[] = [];
+
+function log(msg: string) {
+  console.log(msg);
+  logLinhas.push(msg);
+}
+
+function salvarLogs() {
+  fs.writeFileSync("import-log-v3.txt", logLinhas.join("\n"), "utf8");
+  log(`📄 Log salvo em import-log-v3.txt`);
+  const ferrsUnicas = [...new Set(ferrsNaoEncontradas)].sort();
+  fs.writeFileSync("ferramentas-nao-encontradas.txt", ferrsUnicas.join("\n"), "utf8");
+  log(`📄 ${ferrsUnicas.length} ferramentas únicas não encontradas salvas em ferramentas-nao-encontradas.txt`);
+}
+
 async function main() {
-  console.log("🚀 Iniciando importação de acessos Passbolt...\n");
+  log("🚀 Iniciando importação de acessos Passbolt...\n");
 
   const csvPath = path.join(process.cwd(), "scripts", "passbolt-permissions.csv");
   if (!fs.existsSync(csvPath)) {
-    console.error(`❌ Arquivo não encontrado: ${csvPath}`);
+    log(`❌ Arquivo não encontrado: ${csvPath}`);
     process.exit(1);
   }
 
@@ -98,23 +114,17 @@ async function main() {
 
   const emailParaId = new Map<string, string>();
   for (const row of funcRows) {
-    if (row[0] && row[2]) {
-      emailParaId.set(normalizar(row[2]), row[0]);
-    }
+    if (row[0] && row[2]) emailParaId.set(normalizar(row[2]), row[0]);
   }
 
   const nomeParaId = new Map<string, string>();
   for (const row of ferrRows) {
-    if (row[0] && row[1]) {
-      nomeParaId.set(normalizar(row[1]), row[0]);
-    }
+    if (row[0] && row[1]) nomeParaId.set(normalizar(row[1]), row[0]);
   }
 
   const acessosExistentes = new Set<string>();
   for (const row of acessoRows) {
-    if (row[1] && row[2]) {
-      acessosExistentes.add(`${row[1]}|${row[2]}`);
-    }
+    if (row[1] && row[2]) acessosExistentes.add(`${row[1]}|${row[2]}`);
   }
 
   const content = fs.readFileSync(csvPath, "utf-8");
@@ -124,12 +134,11 @@ async function main() {
   const nameIdx = headerCols.indexOf("name");
 
   if (usernameIdx === -1 || nameIdx === -1) {
-    console.error("❌ CSV deve conter colunas 'username' e 'name'");
+    log("❌ CSV deve conter colunas 'username' e 'name'");
     process.exit(1);
   }
 
   const lines = allLines.slice(1);
-
   const dataHoje = new Date().toISOString().split("T")[0];
 
   let inseridos = 0;
@@ -147,50 +156,44 @@ async function main() {
     const funcionarioId = emailParaId.get(normalizar(email));
     if (!funcionarioId) {
       ignoradosFuncionario++;
-      console.log(`funcionário não encontrado: ${email}`);
+      log(`funcionário não encontrado: ${email}`);
       continue;
     }
 
     const ferramentaId = nomeParaId.get(normalizar(ferramentaNome));
     if (!ferramentaId) {
       ignoradosFerramenta++;
-      console.log(`ferramenta não encontrada: ${ferramentaNome}`);
+      ferrsNaoEncontradas.push(ferramentaNome);
+      log(`ferramenta não encontrada: ${ferramentaNome}`);
       continue;
     }
 
     const chave = `${funcionarioId}|${ferramentaId}`;
     if (acessosExistentes.has(chave)) {
       ignoradosDuplicata++;
-      console.log(`acesso já existe: ${email} → ${ferramentaNome}`);
+      log(`acesso já existe: ${email} → ${ferramentaNome}`);
       continue;
     }
 
     const id = `ac${Date.now()}${index}`;
     await appendSheetRowWithRetry("acessos!A:F", [
-      id,
-      funcionarioId,
-      ferramentaId,
-      "Ativo",
-      dataHoje,
-      "passbolt-import",
+      id, funcionarioId, ferramentaId, "Ativo", dataHoje, "passbolt-import",
     ]);
 
     acessosExistentes.add(chave);
     inseridos++;
-
-    if (inseridos % 50 === 0) {
-      console.log(`  ${inseridos} inseridos...`);
-    }
-
+    if (inseridos % 50 === 0) log(`  ${inseridos} inseridos...`);
     await sleep(200);
   }
 
-  console.log(`\n✅ Importação concluída!`);
-  console.log(`   Total de linhas no CSV: ${lines.length}`);
-  console.log(`   Inseridos com sucesso: ${inseridos}`);
-  console.log(`   Ignorados (funcionário não encontrado): ${ignoradosFuncionario}`);
-  console.log(`   Ignorados (ferramenta não encontrada): ${ignoradosFerramenta}`);
-  console.log(`   Ignorados (acesso já existe): ${ignoradosDuplicata}`);
+  salvarLogs();
+
+  log(`\n✅ Importação concluída!`);
+  log(`   Total de linhas no CSV: ${lines.length}`);
+  log(`   Inseridos com sucesso: ${inseridos}`);
+  log(`   Ignorados (funcionário não encontrado): ${ignoradosFuncionario}`);
+  log(`   Ignorados (ferramenta não encontrada): ${ignoradosFerramenta}`);
+  log(`   Ignorados (acesso já existe): ${ignoradosDuplicata}`);
 }
 
 main().catch(console.error);
