@@ -118,7 +118,17 @@ async function main() {
   }
 
   const content = fs.readFileSync(csvPath, "utf-8");
-  const lines = content.trim().split(/\r?\n/).slice(1);
+  const allLines = content.trim().split(/\r?\n/);
+  const headerCols = parseCSVLine(allLines[0]).map((h) => h.trim().toLowerCase());
+  const usernameIdx = headerCols.indexOf("username");
+  const nameIdx = headerCols.indexOf("name");
+
+  if (usernameIdx === -1 || nameIdx === -1) {
+    console.error("❌ CSV deve conter colunas 'username' e 'name'");
+    process.exit(1);
+  }
+
+  const lines = allLines.slice(1);
 
   const dataHoje = new Date().toISOString().split("T")[0];
 
@@ -128,9 +138,9 @@ async function main() {
   let ignoradosDuplicata = 0;
 
   for (let index = 0; index < lines.length; index++) {
-    const [emailRaw, ferramentaRaw] = parseCSVLine(lines[index]);
-    const email = emailRaw?.trim();
-    const ferramentaNome = ferramentaRaw?.trim();
+    const cols = parseCSVLine(lines[index]);
+    const email = cols[usernameIdx]?.trim();
+    const ferramentaNome = cols[nameIdx]?.trim();
 
     if (!email || !ferramentaNome) continue;
 
