@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Users, Clock, AlertCircle, Grid, ArrowRight, ChevronRight } from "lucide-react";
 import type {
@@ -29,6 +30,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
+  const role = session?.user?.role ?? "user";
+  const userEmail = session?.user?.email ?? "";
+
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
   const [acessos, setAcessos] = useState<AcessoFuncionario[]>([]);
@@ -60,16 +65,48 @@ export default function DashboardPage() {
     return (id: string) => map.get(id);
   }, [funcionarios]);
 
-  const totalAtivos = funcionarios.filter((f) => f.status === "Ativo").length;
-  const pendentesConcessao = acessos.filter((a) => a.status === "Pendente concessão").length;
-  const pendentesRemocao = acessos.filter((a) => a.status === "Pendente remoção").length;
+  const funcionariosFiltrados = useMemo(() => {
+    if (role === "ti") return funcionarios.filter((f) => f.status === "Ativo");
+    if (role === "gestor")
+      return funcionarios.filter(
+        (f) =>
+          f.status === "Ativo" &&
+          f.gestorId &&
+          funcionarios.find((g) => g.email === userEmail)?.id === f.gestorId
+      );
+    return funcionarios.filter((f) => f.email === userEmail && f.status === "Ativo");
+  }, [funcionarios, role, userEmail]);
+
+  const idsFuncionariosFiltrados = useMemo(
+    () => new Set(funcionariosFiltrados.map((f) => f.id)),
+    [funcionariosFiltrados]
+  );
+
+  const movimentacoesFiltradas = useMemo(() => {
+    if (role === "ti") return movimentacoes;
+    return movimentacoes.filter((m) => idsFuncionariosFiltrados.has(m.funcionarioId));
+  }, [movimentacoes, role, idsFuncionariosFiltrados]);
+
+  const acessosFiltrados = useMemo(() => {
+    if (role === "ti") return acessos;
+    return acessos.filter((a) => idsFuncionariosFiltrados.has(a.funcionarioId));
+  }, [acessos, role, idsFuncionariosFiltrados]);
+
+  const offboardingsFiltrados = useMemo(() => {
+    if (role === "ti") return offboardings;
+    return offboardings.filter((o) => idsFuncionariosFiltrados.has(o.funcionarioId));
+  }, [offboardings, role, idsFuncionariosFiltrados]);
+
+  const totalAtivos = funcionariosFiltrados.length;
+  const pendentesConcessao = acessosFiltrados.filter((a) => a.status === "Pendente concessão").length;
+  const pendentesRemocao = acessosFiltrados.filter((a) => a.status === "Pendente remoção").length;
   const totalFerramentas = ferramentas.length;
 
-  const ultimasMovimentacoes = [...movimentacoes]
+  const ultimasMovimentacoes = [...movimentacoesFiltradas]
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
     .slice(0, 6);
 
-  const pendenciasMap = acessos
+  const pendenciasMap = acessosFiltrados
     .filter((a) => a.status === "Pendente concessão" || a.status === "Pendente remoção")
     .reduce<Record<string, { funcionarioId: string; tipos: string[] }>>((acc, a) => {
       if (!acc[a.funcionarioId]) acc[a.funcionarioId] = { funcionarioId: a.funcionarioId, tipos: [] };
@@ -78,7 +115,7 @@ export default function DashboardPage() {
     }, {});
   const pendenciasList = Object.values(pendenciasMap).slice(0, 5);
 
-  const offboardingsAbertos = offboardings.filter((o) => o.status === "Em andamento");
+  const offboardingsAbertos = offboardingsFiltrados.filter((o) => o.status === "Em andamento");
 
   const kpis = [
     {
@@ -298,7 +335,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {funcionarios.slice(0, 6).map((func) => (
+              {funcionariosFiltrados.slice(0, 6).map((func) => (
                 <tr key={func.id} className={trHover}>
                   <td className={tdName}>
                     <div className="flex items-center gap-4">

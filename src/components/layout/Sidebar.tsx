@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { LayoutDashboard, Users, Wrench, Shield, AlertTriangle } from "lucide-react";
@@ -18,6 +19,11 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const userName = session?.user?.name ?? session?.user?.email ?? "Usuário";
+  const userEmail = session?.user?.email ?? "";
+  const userRole = session?.user?.role ?? "user";
+  const initials = userName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
   const [pendenciasCount, setPendenciasCount] = useState(0);
 
   useEffect(() => {
@@ -87,14 +93,14 @@ export function Sidebar() {
       <div className="border-t border-sidebar-border px-4 py-6">
         <div className="flex cursor-pointer items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors hover:bg-muted/50">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-muted text-sm font-semibold text-accent">
-            DL
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">Daniel Lopes</p>
-            <p className="mt-0.5 truncate text-xs text-sidebar-muted">Coordenador de TI</p>
+            <p className="truncate text-sm font-medium text-foreground">{userName}</p>
+            <p className="mt-0.5 truncate text-xs text-sidebar-muted">{userEmail}</p>
           </div>
-          <span className="rounded-md bg-accent-muted px-2 py-1 text-[10px] font-semibold text-accent">
-            TI
+          <span className="rounded-md bg-accent-muted px-2 py-1 text-[10px] font-semibold text-accent uppercase">
+            {userRole}
           </span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { CheckCircle2, Clock, AlertCircle, ChevronRight, Loader2 } from "lucide-react";
@@ -81,7 +81,23 @@ export default function PendenciasPage() {
   const getFuncionario = (id: string) => funcionarios.find((f) => f.id === id);
   const getFerramenta = (id: string) => ferramentas.find((f) => f.id === id);
 
-  const pendentesRemocao: PendenciaItem[] = acessos
+  const userEmail = session?.user?.email ?? "";
+  const role = session?.user?.role ?? "user";
+
+  const funcionarioDoUsuario = funcionarios.find((f) => f.email === userEmail);
+  const gestorId = funcionarioDoUsuario?.id;
+
+  const acessosFiltrados = useMemo(() => {
+    if (role === "ti") return acessos;
+    if (role === "gestor")
+      return acessos.filter((a) => {
+        const func = funcionarios.find((f) => f.id === a.funcionarioId);
+        return func?.gestorId === gestorId;
+      });
+    return acessos.filter((a) => a.funcionarioId === funcionarioDoUsuario?.id);
+  }, [acessos, role, funcionarios, gestorId, funcionarioDoUsuario]);
+
+  const pendentesRemocao: PendenciaItem[] = acessosFiltrados
     .filter((a) => a.status === "Pendente remoção")
     .map((a) => ({
       acesso: a,
@@ -89,7 +105,7 @@ export default function PendenciasPage() {
       ferramenta: getFerramenta(a.ferramentaId),
     }));
 
-  const pendentesConcessao: PendenciaItem[] = acessos
+  const pendentesConcessao: PendenciaItem[] = acessosFiltrados
     .filter((a) => a.status === "Pendente concessão")
     .map((a) => ({
       acesso: a,
