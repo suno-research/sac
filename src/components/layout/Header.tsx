@@ -103,7 +103,7 @@ export function Header() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground"
+          className="rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
           aria-label={theme === "dark" ? "Modo claro" : "Modo escuro"}
         >
           {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
@@ -114,8 +114,9 @@ export function Header() {
             <button
               type="button"
               onClick={() => setDropdownOpen((v) => !v)}
-              className="relative rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground"
+              className="relative rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               aria-label="Notificações"
+              aria-expanded={dropdownOpen}
             >
               <Bell size={20} />
               {pendencias > 0 && (
@@ -223,7 +224,7 @@ export function Header() {
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground"
+          className="rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
           title="Sair"
           aria-label="Sair da conta"
         >

@@ -18,13 +18,6 @@ import {
   tdDashName,
   tdDashMid,
   tdDashLast,
-  thFirst,
-  thMid,
-  thLast,
-  tdName,
-  tdCargo,
-  tdMid,
-  tdLast,
   trHover,
 } from "@/lib/table-classes";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -173,14 +166,24 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div className="h-8 w-52 rounded-lg bg-muted/60 animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-[180px] rounded-xl bg-muted/60 animate-pulse" />
-          ))}
+      <PageMotion>
+        <div className="space-y-10 min-w-0">
+          <div className="mb-10 space-y-2">
+            <div className="h-9 w-48 rounded-lg bg-muted/60 animate-pulse" />
+            <div className="h-5 w-72 max-w-full rounded-lg bg-muted/40 animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-6 xl:gap-8">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-[180px] rounded-xl bg-muted/60 animate-pulse" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-64 rounded-xl bg-muted/60 animate-pulse" />
+            ))}
+          </div>
         </div>
-      </div>
+      </PageMotion>
     );
   }
 
@@ -369,37 +372,50 @@ export default function DashboardPage() {
             </Button>
           }
         >
-          <table className="w-full">
+          <table className="w-full max-w-full table-fixed">
+            <colgroup>
+              <col style={{ width: "34%" }} />
+              <col style={{ width: "24%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "12%" }} />
+            </colgroup>
             <thead className="bg-muted/40">
               <tr>
-                <th className={thFirst}>Nome</th>
-                <th className={`${thMid} min-w-[220px]`}>Cargo</th>
-                <th className={thMid}>Área</th>
-                <th className={thMid}>Status</th>
-                <th className={thLast} />
+                <th className={thDashFirst} scope="col">Nome</th>
+                <th className={thDashMid} scope="col">Cargo</th>
+                <th className={thDashMid} scope="col">Área</th>
+                <th className={thDashMid} scope="col">Status</th>
+                <th className={thDashLast} scope="col" />
               </tr>
             </thead>
             <tbody>
               {funcionariosFiltrados.slice(0, 6).map((func) => (
                 <tr key={func.id} className={trHover}>
-                  <td className={tdName}>
-                    <div className="flex items-center gap-4">
-                      <Avatar name={func.nome} size="md" />
-                      <div className="space-y-1">
-                        <p className="font-medium text-foreground">{func.nome}</p>
-                        <p className="text-xs text-muted-foreground">{func.email}</p>
+                  <td className={tdDashName}>
+                    <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
+                      <Avatar name={func.nome} size="md" className="shrink-0" />
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="truncate font-medium text-foreground">{func.nome}</p>
+                        <p className="truncate text-xs text-muted-foreground">{func.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td className={tdCargo}>{func.cargo}</td>
-                  <td className={tdMid}>{func.area}</td>
-                  <td className={tdMid}>
-                    <Badge variant={func.status === "Ativo" ? "success" : "muted"}>{func.status}</Badge>
+                  <td className={tdDashMid}>
+                    <span className="block truncate">{func.cargo}</span>
                   </td>
-                  <td className={`${tdLast} text-right`}>
-                    <Button variant="ghost" size="sm" asChild>
+                  <td className={tdDashMid}>
+                    <span className="block truncate">{func.area}</span>
+                  </td>
+                  <td className={tdDashMid}>
+                    <Badge variant={func.status === "Ativo" ? "success" : "muted"} className="text-[11px]">
+                      {func.status}
+                    </Badge>
+                  </td>
+                  <td className={tdDashLast}>
+                    <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs">
                       <Link href={`/funcionarios/${func.id}`}>
-                        Ver acessos <ChevronRight className="h-4 w-4" />
+                        Ver acessos <ChevronRight className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
                   </td>

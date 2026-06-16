@@ -76,18 +76,19 @@ export function TablePagination({
           <span className="tabular-nums text-foreground">{totalPages}</span>
         </span>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={!canGoPrev}
-            aria-label="Página anterior"
-            className={cn(
-              "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/80",
-              "bg-card text-muted-foreground shadow-xs transition-all duration-150",
-              "hover:border-border hover:bg-muted/60 hover:text-foreground",
-              "disabled:pointer-events-none disabled:opacity-35 disabled:shadow-none"
-            )}
-          >
+            <button
+              type="button"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={!canGoPrev}
+              aria-label="Página anterior"
+              className={cn(
+                "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/80",
+                "bg-card text-muted-foreground shadow-xs transition-all duration-150",
+                "hover:border-border hover:bg-muted/60 hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
+                "disabled:pointer-events-none disabled:opacity-35 disabled:shadow-none"
+              )}
+            >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
@@ -99,6 +100,7 @@ export function TablePagination({
               "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/80",
               "bg-card text-muted-foreground shadow-xs transition-all duration-150",
               "hover:border-border hover:bg-muted/60 hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
               "disabled:pointer-events-none disabled:opacity-35 disabled:shadow-none"
             )}
           >

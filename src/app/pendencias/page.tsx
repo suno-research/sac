@@ -403,149 +403,151 @@ export default function PendenciasPage() {
         }
       />
 
-      {todasPendencias.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-destructive" />
-            <Badge variant="destructive">{countRemocao} remoção</Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-warning" />
-            <Badge variant="warning">{countConcessao} concessão</Badge>
-          </div>
-        </div>
-      )}
-
-      <FilterBar
-        searchPlaceholder="Buscar funcionário ou ferramenta..."
-        searchValue={busca}
-        onSearchChange={setBusca}
-        showClear={hasFilters}
-        onClear={clearFilters}
-      >
-        <FilterSelect
-          value={tipoPendencia}
-          onChange={(v) => setTipoPendencia(v as TipoPendencia)}
-          aria-label="Filtrar por tipo de pendência"
-        >
-          <option value="todos">Todos os tipos</option>
-          <option value="concessao">Concessão</option>
-          <option value="remocao">Remoção</option>
-        </FilterSelect>
-        <FilterSelect
-          value={origem}
-          onChange={setOrigem}
-          aria-label="Filtrar por origem"
-        >
-          <option value="todas">Todas as origens</option>
-          {origensDisponiveis.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect value={area} onChange={setArea} aria-label="Filtrar por área">
-          <option value="todas">Todas as áreas</option>
-          {areasDisponiveis.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect
-          value={diasFiltro}
-          onChange={(v) => setDiasFiltro(v as DiasFiltro)}
-          aria-label="Filtrar por dias em aberto"
-        >
-          <option value="todos">Todos os prazos</option>
-          <option value="ate_7">Até 7 dias</option>
-          <option value="mais_7">Mais de 7 dias</option>
-        </FilterSelect>
-        <FilterSelect
-          value={sortOrder}
-          onChange={(v) => setSortOrder(v as SortOrder)}
-          aria-label="Ordenar pendências"
-        >
-          <option value="recentes">Mais recentes</option>
-          <option value="antigas">Mais antigas</option>
-          <option value="dias_aberto">Mais dias em aberto</option>
-        </FilterSelect>
-      </FilterBar>
-
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden min-w-0">
-        <div className="overflow-hidden max-lg:overflow-x-auto">
-          <table className="w-full max-w-full table-fixed min-w-[960px] lg:min-w-0">
-            <colgroup>
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "14%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "12%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "8%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "10%" }} />
-            </colgroup>
-            <thead className="bg-muted/40">
-              <tr>
-                <th className={thCompactFirst}>Funcionário</th>
-                <th className={thCompactMid}>Ferramenta</th>
-                <th className={thCompactMid}>Pendência</th>
-                <th className={thCompactMid}>Origem</th>
-                <th className={thCompactMid}>Data</th>
-                <th className={thCompactMid}>Dias</th>
-                <th className={thCompactMid}>Área</th>
-                <th className={thCompactMid}>Tipo</th>
-                <th className={thCompactLast}>Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {sorted.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="p-0">
-                    <EmptyState
-                      icon={hasFilters ? SearchX : CheckCircle2}
-                      title={
-                        hasFilters
-                          ? "Nenhuma pendência encontrada"
-                          : "Nenhuma pendência no momento"
-                      }
-                      description={
-                        hasFilters
-                          ? "Ajuste os filtros ou limpe a busca para ver mais resultados."
-                          : "Todas as pendências foram resolvidas."
-                      }
-                      actionLabel={hasFilters ? "Limpar filtros" : undefined}
-                      onAction={hasFilters ? clearFilters : undefined}
-                    />
-                  </td>
-                </tr>
-              ) : (
-                paginated.map((item) => (
-                  <PendenciaRow
-                    key={item.acesso.id}
-                    item={item}
-                    isTI={isTI}
-                    resolvendo={resolvendo}
-                    onResolver={resolverAcesso}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        {sorted.length > 0 && (
-          <TablePagination
-            totalItems={sorted.length}
-            currentPage={safePage}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={handlePageSizeChange}
-            pageSizeOptions={PAGE_SIZE_OPTIONS}
-            itemLabel="pendências"
+      {todasPendencias.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card shadow-card">
+          <EmptyState
+            icon={CheckCircle2}
+            title="Nenhuma pendência no momento"
+            description="Todas as pendências foram resolvidas."
           />
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <Badge variant="destructive">{countRemocao} remoção</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-warning" />
+              <Badge variant="warning">{countConcessao} concessão</Badge>
+            </div>
+          </div>
+
+          <FilterBar
+            searchPlaceholder="Buscar funcionário ou ferramenta..."
+            searchValue={busca}
+            onSearchChange={setBusca}
+            showClear={hasFilters}
+            onClear={clearFilters}
+          >
+            <FilterSelect
+              value={tipoPendencia}
+              onChange={(v) => setTipoPendencia(v as TipoPendencia)}
+              aria-label="Filtrar por tipo de pendência"
+            >
+              <option value="todos">Todos os tipos</option>
+              <option value="concessao">Concessão</option>
+              <option value="remocao">Remoção</option>
+            </FilterSelect>
+            <FilterSelect
+              value={origem}
+              onChange={setOrigem}
+              aria-label="Filtrar por origem"
+            >
+              <option value="todas">Todas as origens</option>
+              {origensDisponiveis.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect value={area} onChange={setArea} aria-label="Filtrar por área">
+              <option value="todas">Todas as áreas</option>
+              {areasDisponiveis.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              value={diasFiltro}
+              onChange={(v) => setDiasFiltro(v as DiasFiltro)}
+              aria-label="Filtrar por dias em aberto"
+            >
+              <option value="todos">Todos os prazos</option>
+              <option value="ate_7">Até 7 dias</option>
+              <option value="mais_7">Mais de 7 dias</option>
+            </FilterSelect>
+            <FilterSelect
+              value={sortOrder}
+              onChange={(v) => setSortOrder(v as SortOrder)}
+              aria-label="Ordenar pendências"
+            >
+              <option value="recentes">Mais recentes</option>
+              <option value="antigas">Mais antigas</option>
+              <option value="dias_aberto">Mais dias em aberto</option>
+            </FilterSelect>
+          </FilterBar>
+
+          <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden min-w-0">
+            <div className="overflow-hidden max-lg:overflow-x-auto">
+              <table className="w-full max-w-full table-fixed min-w-[960px] lg:min-w-0">
+                <colgroup>
+                  <col style={{ width: "16%" }} />
+                  <col style={{ width: "14%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "8%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                </colgroup>
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className={thCompactFirst}>Funcionário</th>
+                    <th className={thCompactMid}>Ferramenta</th>
+                    <th className={thCompactMid}>Pendência</th>
+                    <th className={thCompactMid}>Origem</th>
+                    <th className={thCompactMid}>Data</th>
+                    <th className={thCompactMid}>Dias</th>
+                    <th className={thCompactMid}>Área</th>
+                    <th className={thCompactMid}>Tipo</th>
+                    <th className={thCompactLast}>Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {sorted.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="p-0">
+                        <EmptyState
+                          icon={SearchX}
+                          title="Nenhuma pendência encontrada"
+                          description="Ajuste os filtros ou limpe a busca para ver mais resultados."
+                          actionLabel="Limpar filtros"
+                          onAction={clearFilters}
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    paginated.map((item) => (
+                      <PendenciaRow
+                        key={item.acesso.id}
+                        item={item}
+                        isTI={isTI}
+                        resolvendo={resolvendo}
+                        onResolver={resolverAcesso}
+                      />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {sorted.length > 0 && (
+              <TablePagination
+                totalItems={sorted.length}
+                currentPage={safePage}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={handlePageSizeChange}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                itemLabel="pendências"
+              />
+            )}
+          </div>
+        </>
+      )}
     </PageMotion>
   );
 }

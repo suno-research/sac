@@ -73,7 +73,7 @@ function TableSkeleton() {
   return (
     <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden p-6 space-y-3">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} style={{ height: 48, background: "#F3F4F6", borderRadius: 8 }} />
+        <div key={i} className="h-12 rounded-lg bg-muted/60 animate-pulse" />
       ))}
     </div>
   );

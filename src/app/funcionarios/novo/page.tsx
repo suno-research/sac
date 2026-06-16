@@ -8,6 +8,7 @@ import Link from "next/link";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const AREAS = ["TI", "Marketing", "Financeiro", "Editorial", "Comercial", "RH", "Jurídico", "Operações"];
 
@@ -271,8 +272,25 @@ export default function NovoFuncionarioPage() {
                     {items.map((f) => {
                       const selecionado = ferramentasSelecionadas.includes(f.id);
                       return (
-                        <button key={f.id} type="button" onClick={() => toggleFerramenta(f.id)} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium text-left transition-all" style={{ borderColor: selecionado ? "#D42126" : "#E5E7EB", background: selecionado ? "#FEF2F2" : "white", color: selecionado ? "#D42126" : "#374151" }}>
-                          <div className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all" style={{ borderColor: selecionado ? "#D42126" : "#D1D5DB", background: selecionado ? "#D42126" : "white" }}>
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => toggleFerramenta(f.id)}
+                          className={cn(
+                            "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium text-left transition-all",
+                            selecionado
+                              ? "border-accent bg-accent-muted text-accent"
+                              : "border-border bg-card text-foreground hover:bg-muted/50"
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-all",
+                              selecionado
+                                ? "border-accent bg-accent text-white"
+                                : "border-border bg-card"
+                            )}
+                          >
                             {selecionado && <Check className="h-3 w-3 text-white" />}
                           </div>
                           <span className="truncate">{f.nome}</span>

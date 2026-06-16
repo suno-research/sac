@@ -17,7 +17,7 @@ type FilterBarProps = {
 };
 
 const selectClass =
-  "h-11 min-w-[160px] rounded-xl border border-input bg-card px-4 text-[15px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring cursor-pointer transition-colors";
+  "h-11 min-w-[160px] rounded-xl border border-input bg-card px-4 text-[15px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:border-ring cursor-pointer transition-colors hover:border-border";
 
 export function FilterSelect({
   value,

@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar } from "@/components/ui/avatar";
 import { TablePagination } from "@/components/ui/table-pagination";
+import { PageMotion } from "@/components/ui/page-motion";
+import { cn } from "@/lib/utils";
 import {
   thCompactFirst,
   thCompactMid,
@@ -72,10 +74,10 @@ interface Offboarding {
 function DetailSkeleton() {
   return (
     <div className="space-y-6 max-w-5xl">
-      <div style={{ height: 120, background: "#F3F4F6", borderRadius: 16 }} />
-      <div className="space-y-3 p-6 rounded-xl border border-border bg-card">
+      <div className="h-[120px] rounded-2xl bg-muted/60 animate-pulse" />
+      <div className="space-y-3 rounded-xl border border-border bg-card p-6">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <div key={i} style={{ height: 56, background: "#F3F4F6", borderRadius: 8 }} />
+          <div key={i} className="h-14 rounded-lg bg-muted/60 animate-pulse" />
         ))}
       </div>
     </div>
@@ -276,16 +278,22 @@ export default function FuncionarioDetailPage() {
     }
   }
 
-  if (loading) return <DetailSkeleton />;
+  if (loading) {
+    return (
+      <PageMotion>
+        <DetailSkeleton />
+      </PageMotion>
+    );
+  }
 
   if (!funcionario) {
     return (
-      <div className="space-y-4 max-w-5xl">
+      <PageMotion>
         <Button variant="ghost" size="sm" asChild className="pl-0">
           <Link href="/funcionarios"><ArrowLeft className="h-4 w-4" /> Funcionários</Link>
         </Button>
         <p className="text-muted-foreground">Funcionário não encontrado.</p>
-      </div>
+      </PageMotion>
     );
   }
 
@@ -313,7 +321,8 @@ export default function FuncionarioDetailPage() {
   const funcionarioAtivo = String(funcionario.status).trim() === "Ativo";
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <PageMotion>
+    <div className="space-y-8 max-w-5xl min-w-0">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild className="pl-0">
           <Link href="/funcionarios"><ArrowLeft className="h-4 w-4" /> Funcionários</Link>
@@ -547,12 +556,12 @@ export default function FuncionarioDetailPage() {
                           key={f.id}
                           type="button"
                           onClick={() => setFerramentaSelecionada(f.id)}
-                          className="flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium text-left transition-all"
-                          style={{
-                            borderColor: ferramentaSelecionada === f.id ? "#D42126" : "#E5E7EB",
-                            background: ferramentaSelecionada === f.id ? "#FEF2F2" : "white",
-                            color: ferramentaSelecionada === f.id ? "#D42126" : "#374151",
-                          }}
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium text-left transition-all",
+                            ferramentaSelecionada === f.id
+                              ? "border-accent bg-accent-muted text-accent"
+                              : "border-border bg-card text-foreground hover:bg-muted/50"
+                          )}
                         >
                           <span className="truncate">{f.nome}</span>
                           <Badge variant={f.tipo === "Passbolt" ? "warning" : "secondary"} className="text-[10px] ml-auto flex-shrink-0">{f.tipo}</Badge>
@@ -711,5 +720,6 @@ export default function FuncionarioDetailPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageMotion>
   );
 }

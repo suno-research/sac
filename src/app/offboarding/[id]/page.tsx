@@ -186,11 +186,11 @@ export default function OffboardingPage() {
   if (loading) {
     return (
       <div className="space-y-8 max-w-3xl">
-        <div style={{ height: 32, width: 200, background: "#F3F4F6", borderRadius: 8 }} />
-        <div style={{ height: 160, background: "#F3F4F6", borderRadius: 16 }} />
+        <div className="h-8 w-48 rounded-lg bg-muted/60 animate-pulse" />
+        <div className="h-40 rounded-2xl bg-muted/60 animate-pulse" />
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} style={{ height: 72, background: "#F3F4F6", borderRadius: 8 }} />
+            <div key={i} className="h-[72px] rounded-lg bg-muted/60 animate-pulse" />
           ))}
         </div>
       </div>
