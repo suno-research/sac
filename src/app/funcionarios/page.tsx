@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ChevronRight, Trash2, Loader2 } from "lucide-react";
+import { ChevronRight, Trash2, Loader2, Users, SearchX } from "lucide-react";
 import type { Funcionario, AreaEmpresa } from "@/lib/mock-data";
 import {
   thCompactFirst,
@@ -23,6 +23,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter,
 } from "@/components/ui/dialog";
@@ -36,9 +37,46 @@ const PAGE_SIZE_OPTIONS = [10, 50, 100];
 function TableSkeleton() {
   return (
     <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden p-6 space-y-3">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} style={{ height: 48, background: "#F3F4F6", borderRadius: 8 }} />
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="h-12 rounded-lg bg-muted/60 animate-pulse" />
       ))}
+    </div>
+  );
+}
+
+function EmptyTableState({
+  hasFilters,
+  aba,
+  onClearFilters,
+}: {
+  hasFilters: boolean;
+  aba: "ativos" | "desligados";
+  onClearFilters: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      {hasFilters ? (
+        <SearchX className="mb-4 h-10 w-10 text-muted-foreground/40" aria-hidden />
+      ) : (
+        <Users className="mb-4 h-10 w-10 text-muted-foreground/40" aria-hidden />
+      )}
+      <p className="text-sm font-medium text-foreground">
+        {hasFilters
+          ? "Nenhum resultado para os filtros aplicados"
+          : aba === "ativos"
+            ? "Nenhum funcionário ativo nesta lista"
+            : "Nenhum funcionário desligado nesta lista"}
+      </p>
+      <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+        {hasFilters
+          ? "Tente ajustar a busca ou remover alguns filtros."
+          : "Os registros aparecerão aqui quando forem cadastrados."}
+      </p>
+      {hasFilters && (
+        <Button variant="outline" size="sm" onClick={onClearFilters} className="mt-5">
+          Limpar filtros
+        </Button>
+      )}
     </div>
   );
 }
@@ -180,24 +218,28 @@ export default function FuncionariosPage() {
       />
 
       {!isGestor && !isUser && (
-        <div className="flex gap-1 p-1 bg-muted/40 rounded-xl w-fit border border-border mb-2">
+        <div className="mb-4 flex w-fit gap-1 rounded-xl border border-border bg-muted/40 p-1">
           <button
+            type="button"
             onClick={() => setAba("ativos")}
-            className="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: aba === "ativos" ? "#D42126" : "transparent",
-              color: aba === "ativos" ? "white" : "#6B7280",
-            }}
+            className={cn(
+              "rounded-lg px-5 py-2 text-sm font-medium transition-all duration-150",
+              aba === "ativos"
+                ? "bg-accent text-white shadow-xs"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
           >
             Ativos ({ativos.length})
           </button>
           <button
+            type="button"
             onClick={() => setAba("desligados")}
-            className="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: aba === "desligados" ? "#111827" : "transparent",
-              color: aba === "desligados" ? "white" : "#6B7280",
-            }}
+            className={cn(
+              "rounded-lg px-5 py-2 text-sm font-medium transition-all duration-150",
+              aba === "desligados"
+                ? "bg-foreground text-background shadow-xs"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
           >
             Desligados ({desligados.length})
           </button>
@@ -224,12 +266,31 @@ export default function FuncionariosPage() {
       )}
 
       <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] table-fixed">
+        {(hasFilters || filtered.length > 0) && (
+          <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-muted/20 px-4 py-2.5 sm:px-5">
+            <p className="text-xs text-muted-foreground">
+              {hasFilters ? (
+                <>
+                  <span className="font-medium tabular-nums text-foreground">{filtered.length}</span>
+                  {" "}resultado{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
+                  <span className="hidden sm:inline"> · {listaAtual.length} na aba atual</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-medium tabular-nums text-foreground">{listaAtual.length}</span>
+                  {" "}funcionário{listaAtual.length !== 1 ? "s" : ""} na lista
+                </>
+              )}
+            </p>
+          </div>
+        )}
+
+        <div className="overflow-x-auto md:overflow-x-visible">
+          <table className="w-full table-fixed md:min-w-0 min-w-[880px]">
             <colgroup>
               <col style={{ width: "24%" }} />
-              <col style={{ width: "17%" }} />
-              <col style={{ width: "9%" }} />
+              <col style={{ width: "18%" }} />
+              <col style={{ width: "8%" }} />
               <col style={{ width: "14%" }} />
               <col style={{ width: "9%" }} />
               <col style={{ width: "9%" }} />
@@ -237,20 +298,24 @@ export default function FuncionariosPage() {
             </colgroup>
             <thead className="bg-muted/40">
               <tr>
-                <th className={thCompactFirst}>Nome</th>
-                <th className={thCompactMid}>Cargo</th>
-                <th className={thCompactMid}>Área</th>
-                <th className={thCompactMid}>Gestor</th>
-                <th className={thCompactMid}>Status</th>
-                <th className={thCompactMid}>Entrada</th>
-                <th className={thCompactLast}>Acessos</th>
+                <th className={thCompactFirst} scope="col">Nome</th>
+                <th className={thCompactMid} scope="col">Cargo</th>
+                <th className={thCompactMid} scope="col">Área</th>
+                <th className={thCompactMid} scope="col">Gestor</th>
+                <th className={thCompactMid} scope="col">Status</th>
+                <th className={thCompactMid} scope="col">Entrada</th>
+                <th className={thCompactLast} scope="col">Acessos</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/40">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-14 text-center text-[15px] text-muted-foreground">
-                    Nenhum funcionário encontrado.
+                  <td colSpan={7} className="p-0">
+                    <EmptyTableState
+                      hasFilters={hasFilters}
+                      aba={aba}
+                      onClearFilters={clearFilters}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -259,11 +324,11 @@ export default function FuncionariosPage() {
                   return (
                     <tr key={func.id} className={trHover}>
                       <td className={tdCompactName}>
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                           <Avatar name={func.nome} size="md" />
                           <div className="min-w-0 flex-1">
-                            <p className="font-medium text-foreground truncate">{func.nome}</p>
-                            <p className="text-xs text-muted-foreground truncate">{func.email}</p>
+                            <p className="truncate font-medium text-foreground">{func.nome}</p>
+                            <p className="truncate text-xs text-muted-foreground">{func.email}</p>
                           </div>
                         </div>
                       </td>
@@ -273,34 +338,41 @@ export default function FuncionariosPage() {
                         </span>
                       </td>
                       <td className={tdCompactText}>
-                        <Badge variant="secondary" className="max-w-full truncate">
+                        <span className="block truncate text-xs font-medium text-foreground/80" title={func.area}>
                           {func.area}
+                        </span>
+                      </td>
+                      <td className={tdCompactText}>
+                        <span className="block truncate" title={gestorNome ?? undefined}>
+                          {gestorNome}
+                        </span>
+                      </td>
+                      <td className={tdCompactText}>
+                        <Badge variant={func.status === "Ativo" ? "success" : "muted"} className="text-[11px]">
+                          {func.status}
                         </Badge>
                       </td>
-                      <td className={`${tdCompactText} truncate`} title={gestorNome ?? undefined}>
-                        {gestorNome}
-                      </td>
-                      <td className={tdCompactText}>
-                        <Badge variant={func.status === "Ativo" ? "success" : "muted"}>{func.status}</Badge>
-                      </td>
-                      <td className={tdCompactText}>
-                        {func.dataEntrada ? new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
+                      <td className={cn(tdCompactText, "tabular-nums text-xs")}>
+                        {func.dataEntrada
+                          ? new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR")
+                          : "—"}
                       </td>
                       <td className={tdCompactActions}>
                         <div className="flex items-center justify-end gap-0.5">
-                          <Button variant="ghost" size="sm" asChild className="h-8 px-2.5 text-xs">
+                          <Button variant="ghost" size="sm" asChild className="h-8 gap-1 px-2 text-xs">
                             <Link href={`/funcionarios/${func.id}`} title="Ver acessos">
-                              <span className="hidden lg:inline">Ver acessos</span>
-                              <span className="lg:hidden">Acessos</span>
-                              <ChevronRight className="h-3.5 w-3.5" />
+                              <span className="sr-only">Ver acessos de {func.nome}</span>
+                              <span className="hidden xl:inline">Acessos</span>
+                              <ChevronRight className="h-4 w-4" />
                             </Link>
                           </Button>
                           {isTI && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              className="h-8 w-8 p-0 text-destructive hover:bg-destructive-muted hover:text-destructive"
                               title="Arquivar funcionário"
+                              aria-label={`Arquivar ${func.nome}`}
                               onClick={() => { setFuncParaArquivar(func); setModalArquivar(true); }}
                             >
                               <Trash2 className="h-4 w-4" />

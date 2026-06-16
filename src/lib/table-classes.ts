@@ -17,17 +17,17 @@ export const trHover =
 
 /** Variante compacta — listas longas (ex.: funcionários) */
 export const thCompactFirst =
-  "pl-5 pr-3 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap";
+  "pl-4 pr-2 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap sm:pl-5 sm:pr-3 sm:py-3.5";
 export const thCompactMid =
-  "px-3 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap";
+  "px-2 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap sm:px-3 sm:py-3.5";
 export const thCompactLast =
-  "px-3 pr-5 py-3.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap";
+  "px-2 pr-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap sm:px-3 sm:pr-5 sm:py-3.5";
 
 export const tdCompactName =
-  "pl-5 pr-3 py-4 text-sm leading-snug";
+  "pl-4 pr-2 py-3.5 text-sm leading-snug sm:pl-5 sm:pr-3 sm:py-4";
 export const tdCompactText =
-  "px-3 py-4 text-sm leading-snug text-muted-foreground";
+  "px-2 py-3.5 text-sm leading-snug text-muted-foreground sm:px-3 sm:py-4";
 export const tdCompactCargo =
-  "px-3 py-4 text-sm leading-snug text-foreground/90 overflow-hidden";
+  "px-2 py-3.5 text-sm leading-snug text-foreground/90 overflow-hidden sm:px-3 sm:py-4";
 export const tdCompactActions =
-  "px-3 pr-5 py-4 text-sm text-right whitespace-nowrap";
+  "px-2 pr-4 py-3.5 text-sm text-right whitespace-nowrap sm:px-3 sm:pr-5 sm:py-4";
