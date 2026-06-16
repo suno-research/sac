@@ -3,6 +3,7 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -36,9 +37,12 @@ export default function LoginPage() {
           textAlign: "center",
         }}
       >
-        <img
+        <Image
           src="/suno-logo.png"
           alt="Suno"
+          width={160}
+          height={48}
+          priority
           style={{ height: 48, width: "auto", marginBottom: 32, display: "inline-block" }}
         />
 

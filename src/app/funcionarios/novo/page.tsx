@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, ArrowRight, Check, User, Shield, Loader2 } from "lucide-react";
@@ -36,7 +36,7 @@ export default function NovoFuncionarioPage() {
   const isTI = session?.user?.role === "ti";
 
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -51,11 +51,23 @@ export default function NovoFuncionarioPage() {
   const [gestorId, setGestorId] = useState("");
   const [dataEntrada, setDataEntrada] = useState(new Date().toISOString().split("T")[0]);
 
-  const [ferramentasSelecionadas, setFerramentasSelecionadas] = useState<string[]>([]);
+  const [ferramentasOverrides, setFerramentasOverrides] = useState<string[] | null>(null);
   const [funcionarioId, setFuncionarioId] = useState("");
 
+  const ferramentasSugeridas = useMemo(() => {
+    if (!cargo || perfis.length === 0) return [];
+    const perfil = perfis.find((p) => p.cargo.toLowerCase() === cargo.toLowerCase());
+    return perfil ? perfil.ferramentaIds : [];
+  }, [cargo, perfis]);
+
+  const ferramentasSelecionadas = ferramentasOverrides ?? ferramentasSugeridas;
+
+  function handleCargoChange(value: string) {
+    setCargo(value);
+    setFerramentasOverrides(null);
+  }
+
   useEffect(() => {
-    setLoading(true);
     Promise.all([
       fetch("/api/ferramentas").then((r) => r.json()),
       fetch("/api/funcionarios").then((r) => r.json()),
@@ -68,16 +80,6 @@ export default function NovoFuncionarioPage() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!cargo || perfis.length === 0) return;
-    const perfil = perfis.find((p) => p.cargo.toLowerCase() === cargo.toLowerCase());
-    if (perfil) {
-      setFerramentasSelecionadas(perfil.ferramentaIds);
-    } else {
-      setFerramentasSelecionadas([]);
-    }
-  }, [cargo, perfis]);
 
   if (!isTI) {
     return (
@@ -139,9 +141,9 @@ export default function NovoFuncionarioPage() {
   }
 
   function toggleFerramenta(id: string) {
-    setFerramentasSelecionadas((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
-    );
+    const current = ferramentasOverrides ?? ferramentasSugeridas;
+    const next = current.includes(id) ? current.filter((f) => f !== id) : [...current, id];
+    setFerramentasOverrides(next);
   }
 
   const ferramentasPorCategoria = ferramentas.reduce((acc, f) => {
@@ -216,7 +218,7 @@ export default function NovoFuncionarioPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Cargo <span style={{ color: "#D42126" }}>*</span></label>
-                <input type="text" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ex: Analista de TI" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all" />
+                <input type="text" value={cargo} onChange={(e) => handleCargoChange(e.target.value)} placeholder="Ex: Analista de TI" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Área <span style={{ color: "#D42126" }}>*</span></label>

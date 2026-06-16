@@ -31,7 +31,7 @@ async function main() {
       }
     });
     console.log("✅ Aba 'admins' criada!");
-  } catch (e) {
+  } catch {
     console.log("⚠️  Aba 'admins' já existe, continuando...");
   }
 

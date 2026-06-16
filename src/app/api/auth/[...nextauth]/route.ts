@@ -45,7 +45,7 @@ export const authOptions: AuthOptions = {
       const domain = email.split("@")[1];
       return ALLOWED_DOMAINS.includes(domain);
     },
-    async redirect({ url, baseUrl }) {
+    async redirect({ baseUrl }) {
       return baseUrl + "/dashboard";
     },
     async session({ session, token }) {
