@@ -22,9 +22,14 @@ export function Sidebar() {
   const { data: session } = useSession();
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuário";
   const userEmail = session?.user?.email ?? "";
-  const userRole = session?.user?.role ?? "user";
+  const role = session?.user?.role ?? "user";
   const initials = userName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
   const [pendenciasCount, setPendenciasCount] = useState(0);
+
+  const navItemsFiltrados = navItems.filter((item) => {
+    if (item.href === "/pendencias") return role === "ti" || role === "gestor";
+    return true;
+  });
 
   useEffect(() => {
     fetch("/api/acessos")
@@ -58,7 +63,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1.5 px-4 py-6">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItemsFiltrados.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link key={href} href={href} className="relative block">
@@ -100,7 +105,7 @@ export function Sidebar() {
             <p className="mt-0.5 truncate text-xs text-sidebar-muted">{userEmail}</p>
           </div>
           <span className="rounded-md bg-accent-muted px-2 py-1 text-[10px] font-semibold text-accent uppercase">
-            {userRole}
+            {role}
           </span>
         </div>
       </div>
