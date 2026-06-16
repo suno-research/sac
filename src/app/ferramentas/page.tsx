@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { Plus, Pencil, Trash2, Loader2, SearchX, Wrench } from "lucide-react";
 import {
@@ -16,23 +16,26 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CategoriaFerramenta, TipoAcesso, Ferramenta, AcessoFuncionario } from "@/lib/mock-data";
 import {
-  thFirst,
-  thMid,
-  thLast,
-  tdName,
-  tdMid,
-  tdLast,
+  thCompactFirst,
+  thCompactMid,
+  thCompactLast,
+  tdCompactName,
+  tdCompactText,
+  tdCompactActions,
   trHover,
 } from "@/lib/table-classes";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 
-const categorias: CategoriaFerramenta[] = [
+const PAGE_SIZE_OPTIONS = [10, 30, 50, 100];
+
+const categoriasCadastro: CategoriaFerramenta[] = [
   "Comunicação",
   "Analytics",
   "Desenvolvimento",
@@ -43,7 +46,7 @@ const categorias: CategoriaFerramenta[] = [
   "Infraestrutura",
 ];
 
-const emojiCategoria: Record<CategoriaFerramenta, string> = {
+const emojiCategoria: Record<string, string> = {
   Produtividade: "📋",
   Analytics: "📊",
   Desenvolvimento: "💻",
@@ -53,6 +56,10 @@ const emojiCategoria: Record<CategoriaFerramenta, string> = {
   Segurança: "🔐",
   Infraestrutura: "⚙️",
 };
+
+function getEmojiCategoria(categoria: string) {
+  return emojiCategoria[categoria] ?? "📦";
+}
 
 const FERRAMENTA_VAZIA = {
   nome: "",
@@ -83,6 +90,9 @@ export default function FerramentasPage() {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<string>("todas");
   const [tipo, setTipo] = useState<string>("todos");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPageByKey, setCurrentPageByKey] = useState<Record<string, number>>({});
 
   const [modalAberto, setModalAberto] = useState(false);
   const [modalEdicao, setModalEdicao] = useState(false);
@@ -110,16 +120,74 @@ export default function FerramentasPage() {
   const getTotalAtivos = (ferramentaId: string) =>
     acessos.filter((a) => a.ferramentaId === ferramentaId && a.status === "Ativo").length;
 
-  const filtered = ferramentas.filter((f) => {
-    const matchBusca =
-      f.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      f.descricao.toLowerCase().includes(busca.toLowerCase());
-    const matchCategoria = categoria === "todas" || f.categoria === categoria;
-    const matchTipo = tipo === "todos" || f.tipo === tipo;
-    return matchBusca && matchCategoria && matchTipo;
-  });
+  const categoriasDisponiveis = useMemo(
+    () =>
+      [...new Set(ferramentas.map((f) => f.categoria).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+      ),
+    [ferramentas]
+  );
 
-  const hasFilters = busca || categoria !== "todas" || tipo !== "todos";
+  const tiposDisponiveis = useMemo(
+    () =>
+      [...new Set(ferramentas.map((f) => f.tipo).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+      ),
+    [ferramentas]
+  );
+
+  const filtered = useMemo(() => {
+    const term = busca.toLowerCase();
+    return ferramentas.filter((f) => {
+      const matchBusca =
+        !term ||
+        f.nome.toLowerCase().includes(term) ||
+        f.descricao.toLowerCase().includes(term) ||
+        f.url.toLowerCase().includes(term);
+      const matchCategoria = categoria === "todas" || f.categoria === categoria;
+      const matchTipo = tipo === "todos" || f.tipo === tipo;
+      return matchBusca && matchCategoria && matchTipo;
+    });
+  }, [ferramentas, busca, categoria, tipo]);
+
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    list.sort((a, b) => {
+      const cmp = a.nome.localeCompare(b.nome, "pt-BR");
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+    return list;
+  }, [filtered, sortOrder]);
+
+  const paginationKey = `${busca}|${categoria}|${tipo}|${pageSize}|${sortOrder}`;
+  const currentPage = currentPageByKey[paginationKey] ?? 1;
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+
+  const setCurrentPage = (page: number) => {
+    setCurrentPageByKey((prev) => ({ ...prev, [paginationKey]: page }));
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPageByKey((prev) => ({
+      ...prev,
+      [`${busca}|${categoria}|${tipo}|${size}|${sortOrder}`]: 1,
+    }));
+  };
+
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, safePage, pageSize]);
+
+  const hasFilters = Boolean(busca || categoria !== "todas" || tipo !== "todos");
+
+  const clearFilters = () => {
+    setBusca("");
+    setCategoria("todas");
+    setTipo("todos");
+  };
 
   async function criarFerramenta() {
     if (!novaFerramenta.nome || !novaFerramenta.categoria || !novaFerramenta.tipo) {
@@ -233,100 +301,161 @@ export default function FerramentasPage() {
       />
 
       <FilterBar
-        searchPlaceholder="Buscar ferramenta..."
+        searchPlaceholder="Buscar por nome, descrição ou URL..."
         searchValue={busca}
         onSearchChange={setBusca}
         showClear={hasFilters}
-        onClear={() => { setBusca(""); setCategoria("todas"); setTipo("todos"); }}
+        onClear={clearFilters}
       >
-        <FilterSelect value={categoria} onChange={setCategoria}>
+        <FilterSelect
+          value={categoria}
+          onChange={setCategoria}
+          aria-label="Filtrar por categoria"
+        >
           <option value="todas">Todas as categorias</option>
-          {categorias.map((c) => (
-            <option key={c} value={c}>{emojiCategoria[c]} {c}</option>
+          {categoriasDisponiveis.map((c) => (
+            <option key={c} value={c}>
+              {getEmojiCategoria(c)} {c}
+            </option>
           ))}
         </FilterSelect>
-        <FilterSelect value={tipo} onChange={setTipo}>
+        <FilterSelect
+          value={tipo}
+          onChange={setTipo}
+          aria-label="Filtrar por tipo de acesso"
+        >
           <option value="todos">Todos os tipos</option>
-          <option value="Individual">Individual</option>
-          <option value="Passbolt">Passbolt</option>
+          {tiposDisponiveis.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          value={sortOrder}
+          onChange={(v) => setSortOrder(v as "asc" | "desc")}
+          aria-label="Ordenar ferramentas"
+        >
+          <option value="asc">Ordenar: A-Z</option>
+          <option value="desc">Ordenar: Z-A</option>
         </FilterSelect>
       </FilterBar>
 
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted/40">
-            <tr>
-              <th className={thFirst}>Nome</th>
-              <th className={thMid}>Categoria</th>
-              <th className={thMid}>Tipo de acesso</th>
-              <th className={thMid}>URL</th>
-              <th className={thMid}>Usuários ativos</th>
-              <th className={thLast} />
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden min-w-0">
+        <div className="overflow-hidden max-lg:overflow-x-auto">
+          <table className="w-full max-w-full table-fixed">
+            <colgroup>
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "22%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "10%" }} />
+            </colgroup>
+            <thead className="bg-muted/40">
               <tr>
-                <td colSpan={6} className="p-0">
-                  <EmptyState
-                    icon={hasFilters ? SearchX : Wrench}
-                    title={hasFilters ? "Nenhuma ferramenta encontrada" : "Nenhuma ferramenta cadastrada"}
-                    description={
-                      hasFilters
-                        ? "Ajuste os filtros ou limpe a busca para ver mais resultados."
-                        : "As ferramentas cadastradas aparecerão nesta lista."
-                    }
-                    actionLabel={hasFilters ? "Limpar filtros" : undefined}
-                    onAction={hasFilters ? () => { setBusca(""); setCategoria("todas"); setTipo("todos"); } : undefined}
-                  />
-                </td>
+                <th className={thCompactFirst}>Nome</th>
+                <th className={thCompactMid}>Categoria</th>
+                <th className={thCompactMid}>Tipo de acesso</th>
+                <th className={thCompactMid}>URL</th>
+                <th className={thCompactMid}>Usuários ativos</th>
+                <th className={thCompactLast} />
               </tr>
-            ) : (
-              filtered.map((f) => {
-                const ativos = getTotalAtivos(f.id);
-                return (
-                  <tr key={f.id} className={trHover}>
-                    <td className={tdName}>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xl flex-shrink-0" aria-hidden>
-                          {emojiCategoria[f.categoria as CategoriaFerramenta] ?? "📦"}
-                        </span>
-                        <div className="space-y-1">
-                          <p className="font-medium text-foreground">{f.nome}</p>
-                          <p className="text-xs text-muted-foreground">{f.descricao}</p>
+            </thead>
+            <tbody>
+              {sorted.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-0">
+                    <EmptyState
+                      icon={hasFilters ? SearchX : Wrench}
+                      title={hasFilters ? "Nenhuma ferramenta encontrada" : "Nenhuma ferramenta cadastrada"}
+                      description={
+                        hasFilters
+                          ? "Ajuste os filtros ou limpe a busca para ver mais resultados."
+                          : "As ferramentas cadastradas aparecerão nesta lista."
+                      }
+                      actionLabel={hasFilters ? "Limpar filtros" : undefined}
+                      onAction={hasFilters ? clearFilters : undefined}
+                    />
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((f) => {
+                  const ativos = getTotalAtivos(f.id);
+                  return (
+                    <tr key={f.id} className={trHover}>
+                      <td className={tdCompactName}>
+                        <div className="flex min-w-0 items-center gap-3 overflow-hidden">
+                          <span className="shrink-0 text-lg" aria-hidden>
+                            {getEmojiCategoria(f.categoria)}
+                          </span>
+                          <div className="min-w-0 overflow-hidden">
+                            <p className="truncate font-medium text-foreground">{f.nome}</p>
+                            <p className="truncate text-xs text-muted-foreground">{f.descricao}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className={tdMid}><Badge variant="secondary">{f.categoria}</Badge></td>
-                    <td className={tdMid}><Badge variant={f.tipo === "Passbolt" ? "warning" : "secondary"}>{f.tipo}</Badge></td>
-                    <td className="px-8 py-6 text-[15px] min-w-[240px]">
-                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
-                        {f.url.replace("https://", "")}
-                      </a>
-                    </td>
-                    <td className={`${tdMid} font-medium text-foreground tabular-nums`}>{ativos}</td>
-                    <td className={`${tdLast} text-right`}>
-                      {isTI && (
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => abrirEdicao(f)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => abrirConfirmDelete(f)} className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-        {filtered.length > 0 && (
-          <div className="px-10 py-5 border-t border-border text-sm text-muted-foreground">
-            Exibindo {filtered.length} de {ferramentas.length} ferramentas
-          </div>
+                      </td>
+                      <td className={tdCompactText}>
+                        <Badge variant="secondary" className="max-w-full truncate text-[11px]">
+                          {f.categoria}
+                        </Badge>
+                      </td>
+                      <td className={tdCompactText}>
+                        <Badge
+                          variant={f.tipo === "Passbolt" ? "warning" : "secondary"}
+                          className="max-w-full truncate text-[11px]"
+                        >
+                          {f.tipo}
+                        </Badge>
+                      </td>
+                      <td className={tdCompactText}>
+                        <a
+                          href={f.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block truncate text-muted-foreground hover:text-accent transition-colors"
+                        >
+                          {f.url.replace(/^https?:\/\//, "")}
+                        </a>
+                      </td>
+                      <td className={`${tdCompactText} font-medium tabular-nums text-foreground`}>
+                        {ativos}
+                      </td>
+                      <td className={tdCompactActions}>
+                        {isTI && (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => abrirEdicao(f)} aria-label={`Editar ${f.nome}`}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => abrirConfirmDelete(f)}
+                              className="text-destructive hover:text-destructive"
+                              aria-label={`Excluir ${f.nome}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+        {sorted.length > 0 && (
+          <TablePagination
+            totalItems={sorted.length}
+            currentPage={safePage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            itemLabel="ferramentas"
+          />
         )}
       </div>
 
@@ -347,7 +476,7 @@ export default function FerramentasPage() {
                 <Select value={novaFerramenta.categoria} onValueChange={(v) => setNovaFerramenta((p) => ({ ...p, categoria: v as CategoriaFerramenta }))}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {categorias.map((c) => <SelectItem key={c} value={c}>{emojiCategoria[c]} {c}</SelectItem>)}
+                    {categoriasCadastro.map((c) => <SelectItem key={c} value={c}>{getEmojiCategoria(c)} {c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -398,7 +527,7 @@ export default function FerramentasPage() {
                 <Select value={ferramentaEditando.categoria} onValueChange={(v) => setFerramentaEditando((p) => ({ ...p, categoria: v as CategoriaFerramenta }))}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {categorias.map((c) => <SelectItem key={c} value={c}>{emojiCategoria[c]} {c}</SelectItem>)}
+                    {categoriasCadastro.map((c) => <SelectItem key={c} value={c}>{getEmojiCategoria(c)} {c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
