@@ -187,10 +187,11 @@ export default function FuncionarioDetailPage() {
     try {
       const hoje = new Date().toISOString().split("T")[0];
       const offId = `off${Date.now()}`;
+      const responsavelId = session?.user?.email || "";
       await fetch("/api/offboardings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: offId, funcionarioId: funcionario.id, dataDesligamento: hoje, dataInicio: hoje, dataConclusao: "", status: "Em andamento", responsavelId: "" }),
+        body: JSON.stringify({ id: offId, funcionarioId: funcionario.id, dataDesligamento: hoje, dataInicio: hoje, dataConclusao: "", status: "Em andamento", responsavelId }),
       });
       await fetch("/api/acessos/update-batch", {
         method: "PUT",

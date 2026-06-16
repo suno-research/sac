@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getSheetData, appendSheetRow } from "@/lib/sheets";
+import { filterFuncionariosByRole } from "@/lib/governance";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    const role = session.user.role ?? "user";
+    const userEmail = session.user.email ?? "";
+
     const rows = await getSheetData("funcionarios!A2:I");
     const funcionarios = rows.map((row) => ({
       id: row[0] || "",
@@ -16,7 +26,9 @@ export async function GET() {
       dataEntrada: row[7] || "",
       dataDesligamento: row[8] || undefined,
     }));
-    return NextResponse.json(funcionarios);
+
+    const filtered = filterFuncionariosByRole(funcionarios, role, userEmail);
+    return NextResponse.json(filtered);
   } catch (error) {
     console.error("Erro ao buscar funcionários:", error);
     return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });

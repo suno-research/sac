@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
+import { formatOrigemAcesso, daysSinceDate } from "@/lib/governance";
 
 interface Funcionario {
   id: string;
@@ -184,19 +185,24 @@ export default function PendenciasPage() {
               Nenhum acesso pendente de remoção ✅
             </div>
           ) : (
-            <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-              <table className="w-full">
+            <div className="rounded-xl border border-border bg-card shadow-card overflow-x-auto">
+              <table className="w-full min-w-[900px]">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="pl-8 pr-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Funcionário</th>
                     <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ferramenta</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Origem</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dias</th>
                     <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Área</th>
                     <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tipo</th>
                     <th className="pl-4 pr-8 py-4 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {pendentesRemocao.map(({ acesso, funcionario, ferramenta }) => (
+                  {pendentesRemocao.map(({ acesso, funcionario, ferramenta }) => {
+                    const dias = daysSinceDate(acesso.dataConcessao);
+                    return (
                     <tr key={acesso.id} className="hover:bg-muted/30 transition-colors">
                       <td className="pl-8 pr-4 py-5">
                         <div className="flex items-center gap-3">
@@ -212,6 +218,23 @@ export default function PendenciasPage() {
                       <td className="px-4 py-5">
                         <p className="font-medium text-sm text-foreground">{ferramenta?.nome || "—"}</p>
                         <p className="text-xs text-muted-foreground">{ferramenta?.categoria}</p>
+                      </td>
+                      <td className="px-4 py-5 text-sm text-muted-foreground">
+                        {formatOrigemAcesso(acesso.concedidoPor)}
+                      </td>
+                      <td className="px-4 py-5 text-sm tabular-nums text-muted-foreground">
+                        {acesso.dataConcessao
+                          ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR")
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-5">
+                        {dias !== null ? (
+                          <Badge variant={dias > 7 ? "destructive" : dias > 3 ? "warning" : "secondary"}>
+                            {dias}d
+                          </Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-5">
                         <Badge variant="secondary">{funcionario?.area || "—"}</Badge>
@@ -247,7 +270,8 @@ export default function PendenciasPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -267,19 +291,24 @@ export default function PendenciasPage() {
               Nenhum acesso pendente de concessão ✅
             </div>
           ) : (
-            <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-              <table className="w-full">
+            <div className="rounded-xl border border-border bg-card shadow-card overflow-x-auto">
+              <table className="w-full min-w-[900px]">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="pl-8 pr-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Funcionário</th>
                     <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ferramenta</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Origem</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dias</th>
                     <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Área</th>
                     <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tipo</th>
                     <th className="pl-4 pr-8 py-4 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {pendentesConcessao.map(({ acesso, funcionario, ferramenta }) => (
+                  {pendentesConcessao.map(({ acesso, funcionario, ferramenta }) => {
+                    const dias = daysSinceDate(acesso.dataConcessao);
+                    return (
                     <tr key={acesso.id} className="hover:bg-muted/30 transition-colors">
                       <td className="pl-8 pr-4 py-5">
                         <div className="flex items-center gap-3">
@@ -295,6 +324,23 @@ export default function PendenciasPage() {
                       <td className="px-4 py-5">
                         <p className="font-medium text-sm text-foreground">{ferramenta?.nome || "—"}</p>
                         <p className="text-xs text-muted-foreground">{ferramenta?.categoria}</p>
+                      </td>
+                      <td className="px-4 py-5 text-sm text-muted-foreground">
+                        {formatOrigemAcesso(acesso.concedidoPor)}
+                      </td>
+                      <td className="px-4 py-5 text-sm tabular-nums text-muted-foreground">
+                        {acesso.dataConcessao
+                          ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR")
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-5">
+                        {dias !== null ? (
+                          <Badge variant={dias > 7 ? "destructive" : dias > 3 ? "warning" : "secondary"}>
+                            {dias}d
+                          </Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-5">
                         <Badge variant="secondary">{funcionario?.area || "—"}</Badge>
@@ -329,7 +375,8 @@ export default function PendenciasPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

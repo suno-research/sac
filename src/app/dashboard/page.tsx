@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Users, Clock, AlertCircle, Grid, ArrowRight, ChevronRight } from "lucide-react";
+import { Users, Clock, AlertCircle, Grid, ArrowRight, ChevronRight, UserMinus } from "lucide-react";
 import type {
   Funcionario,
   Ferramenta,
@@ -34,6 +34,10 @@ import { Avatar } from "@/components/ui/avatar";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  normalizeMovimentacaoStatus,
+  movimentacaoStatusVariant,
+} from "@/lib/governance";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -145,6 +149,19 @@ export default function DashboardPage() {
       iconClassName: "text-accent bg-accent-muted",
       href: role === "ti" || role === "gestor" ? "/pendencias" : undefined,
     },
+    ...(role !== "user"
+      ? [
+          {
+            label: "Offboardings em andamento",
+            value: offboardingsAbertos.length,
+            icon: <UserMinus className="h-5 w-5" />,
+            iconClassName: "text-destructive bg-destructive-muted",
+            href: offboardingsAbertos[0]
+              ? `/offboarding/${offboardingsAbertos[0].id}`
+              : undefined,
+          },
+        ]
+      : []),
     {
       label: "Ferramentas cadastradas",
       value: totalFerramentas,
@@ -175,7 +192,7 @@ export default function DashboardPage() {
           description="Visão geral do controle de acessos da Suno"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-6 xl:gap-8">
           {kpis.map((kpi, i) => (
             <KpiCard key={kpi.label} {...kpi} index={i} />
           ))}
@@ -243,6 +260,7 @@ export default function DashboardPage() {
               <tbody>
                 {ultimasMovimentacoes.map((mov) => {
                   const func = getFuncionarioById(mov.funcionarioId);
+                  const statusLabel = normalizeMovimentacaoStatus(mov.status);
                   return (
                     <tr key={mov.id} className={trHover}>
                       <td className={tdDashName}>
@@ -261,16 +279,10 @@ export default function DashboardPage() {
                       </td>
                       <td className={tdDashLast}>
                         <Badge
-                          variant={
-                            mov.status === "Concluído"
-                              ? "success"
-                              : mov.status === "Em andamento"
-                                ? "warning"
-                                : "muted"
-                          }
+                          variant={movimentacaoStatusVariant(mov.status)}
                           className="text-[11px]"
                         >
-                          {mov.status}
+                          {statusLabel}
                         </Badge>
                       </td>
                     </tr>

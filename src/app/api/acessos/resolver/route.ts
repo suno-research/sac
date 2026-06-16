@@ -26,12 +26,14 @@ export async function PUT(request: Request) {
 
     const sheetRow = rowIndex + 2;
     const row = rows[rowIndex];
+    const hoje = new Date().toISOString().split("T")[0];
+    const concedidoPor = session.user?.email || "sistema";
 
     await updateSheetRow(`acessos!A${sheetRow}:F${sheetRow}`, [
-      row[0], row[1], row[2], novoStatus, row[4] || "", row[5] || "",
+      row[0], row[1], row[2], novoStatus, hoje, concedidoPor,
     ]);
 
-    return NextResponse.json({ success: true, id, novoStatus });
+    return NextResponse.json({ success: true, id, novoStatus, dataConcessao: hoje, concedidoPor });
   } catch (error) {
     console.error("Erro ao resolver acesso:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });

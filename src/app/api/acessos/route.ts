@@ -1,11 +1,31 @@
 import { NextResponse } from "next/server";
 import { getSheetData, appendSheetRow, updateSheetRow } from "@/lib/sheets";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { filterAcessosByRole } from "@/lib/acessos-scope";
 
 export async function GET() {
   try {
-    const rows = await getSheetData("acessos!A2:F");
-    const acessos = rows.map((row) => ({
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    const role = session.user.role ?? "user";
+    const userEmail = session.user.email ?? "";
+
+    const [acessoRows, funcRows] = await Promise.all([
+      getSheetData("acessos!A2:F"),
+      getSheetData("funcionarios!A2:I"),
+    ]);
+
+    const funcionarios = funcRows.map((row) => ({
+      id: row[0] || "",
+      email: row[2] || "",
+      gestorId: row[5] || undefined,
+    }));
+
+    const acessos = acessoRows.map((row) => ({
       id: row[0] || "",
       funcionarioId: row[1] || "",
       ferramentaId: row[2] || "",
@@ -13,7 +33,9 @@ export async function GET() {
       dataConcessao: row[4] || "",
       concedidoPor: row[5] || "",
     }));
-    return NextResponse.json(acessos.filter((a) => a.id));
+
+    const filtered = filterAcessosByRole(acessos, funcionarios, role, userEmail);
+    return NextResponse.json(filtered.filter((a) => a.id));
   } catch (error) {
     console.error("Erro ao buscar acessos:", error);
     return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });

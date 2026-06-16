@@ -30,15 +30,27 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const dataInicio = body.dataInicio || new Date().toISOString().split("T")[0];
+
     await appendSheetRow("offboardings!A:G", [
       body.id,
       body.funcionarioId,
       body.dataDesligamento,
-      body.dataInicio,
+      dataInicio,
       body.dataConclusao || "",
       body.status,
-      body.responsavelId || "",
+      body.responsavelId || session.user?.email || "",
     ]);
+
+    const movId = `mov${Date.now()}`;
+    await appendSheetRow("movimentacoes!A:E", [
+      movId,
+      body.funcionarioId,
+      "offboarding",
+      dataInicio,
+      "em andamento",
+    ]);
+
     return NextResponse.json({ success: true, id: body.id });
   } catch (error) {
     console.error("Erro ao salvar offboarding:", error);
