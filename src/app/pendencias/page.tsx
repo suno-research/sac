@@ -9,6 +9,7 @@ import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
+import { useToast } from "@/components/ui/toast";
 
 interface Funcionario {
   id: string;
@@ -51,6 +52,7 @@ function SkeletonSection() {
 
 export default function PendenciasPage() {
   const { data: session } = useSession();
+  const { toast } = useToast();
   const isTI = session?.user?.role === "ti";
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
@@ -125,14 +127,21 @@ export default function PendenciasPage() {
       if (!res.ok) {
         const err = await res.json();
         console.error("Erro ao resolver acesso:", err);
+        toast("Erro ao resolver pendência.", "error");
         return;
       }
 
       setAcessos((prev) =>
         prev.map((a) => (a.id === acessoId ? { ...a, status: novoStatus } : a))
       );
+      toast(
+        novoStatus === "Ativo"
+          ? "Concessão confirmada com sucesso."
+          : "Remoção confirmada com sucesso."
+      );
     } catch (e) {
       console.error("Erro ao resolver acesso", e);
+      toast("Erro ao resolver pendência.", "error");
     } finally {
       setResolvendo(null);
     }

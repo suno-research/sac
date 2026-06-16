@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { LayoutDashboard, Users, Wrench, Shield, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SunoLogo } from "@/components/layout/SunoLogo";
+import { countPendencias, filterAcessosByRole } from "@/lib/acessos-scope";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,18 +33,18 @@ export function Sidebar() {
   });
 
   useEffect(() => {
-    fetch("/api/acessos")
-      .then((r) => r.json())
-      .then((acessos) => {
-        if (!Array.isArray(acessos)) return;
-        const count = acessos.filter(
-          (a: { status: string }) =>
-            a.status === "Pendente concessão" || a.status === "Pendente remoção"
-        ).length;
-        setPendenciasCount(count);
+    if (role !== "ti" && role !== "gestor") return;
+    Promise.all([
+      fetch("/api/acessos").then((r) => r.json()),
+      fetch("/api/funcionarios").then((r) => r.json()),
+    ])
+      .then(([acessos, funcionarios]) => {
+        if (!Array.isArray(acessos) || !Array.isArray(funcionarios)) return;
+        const scoped = filterAcessosByRole(acessos, funcionarios, role, userEmail);
+        setPendenciasCount(countPendencias(scoped));
       })
       .catch(() => setPendenciasCount(0));
-  }, [pathname]);
+  }, [pathname, role, userEmail]);
 
   return (
     <aside

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Pencil, Plus, Trash2, Loader2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Loader2, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -20,6 +20,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
 
 const AREAS = ["TI", "Marketing", "Financeiro", "Editorial", "Comercial", "RH", "Jurídico", "Operações"];
 
@@ -59,6 +61,7 @@ function PerfisSkeleton() {
 
 export default function PerfisPage() {
   const { data: session } = useSession();
+  const { toast } = useToast();
   const isTI = session?.user?.role === "ti";
 
   const [perfis, setPerfis] = useState<PerfilPadrao[]>([]);
@@ -118,6 +121,7 @@ export default function PerfisPage() {
       setNovoPerfil(PERFIL_VAZIO);
       setFerramentasNovo([]);
       setModalNovo(false);
+      toast("Perfil padrão criado com sucesso.");
     } catch {
       setErro("Erro ao salvar. Tente novamente.");
     } finally {
@@ -149,6 +153,7 @@ export default function PerfisPage() {
       const atualizado = await res.json();
       setPerfis((prev) => prev.map((p) => (p.id === atualizado.id ? atualizado : p)));
       setEditando(null);
+      toast("Perfil padrão atualizado com sucesso.");
     } catch {
       setErro("Erro ao salvar. Tente novamente.");
     } finally {
@@ -170,6 +175,7 @@ export default function PerfisPage() {
       if (!res.ok) throw new Error();
       setPerfis((prev) => prev.filter((p) => p.id !== perfilParaExcluir.id));
       setModalConfirmDelete(false);
+      toast("Perfil padrão excluído com sucesso.");
     } catch {
       setErro("Erro ao excluir. Tente novamente.");
     } finally {
@@ -228,7 +234,16 @@ export default function PerfisPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {perfis.map((perfil, index) => {
+        {perfis.length === 0 ? (
+          <div className="col-span-full rounded-xl border border-border bg-card shadow-card">
+            <EmptyState
+              icon={Shield}
+              title="Nenhum perfil padrão cadastrado"
+              description="Perfis definem pacotes de acesso por cargo e aceleram o onboarding de novos colaboradores."
+            />
+          </div>
+        ) : (
+        perfis.map((perfil, index) => {
           const ferrsDoPerfil = perfil.ferramentaIds.map(getFerramentaById).filter(Boolean);
           return (
             <motion.article
@@ -272,7 +287,8 @@ export default function PerfisPage() {
               </div>
             </motion.article>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* Modal — Novo perfil */}

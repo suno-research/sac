@@ -6,6 +6,7 @@ import { Bell, LogOut, Moon, Sun, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "@/providers/theme-provider";
 import { cn } from "@/lib/utils";
+import { countPendencias, filterAcessosByRole } from "@/lib/acessos-scope";
 
 interface Acesso {
   id: string;
@@ -55,26 +56,27 @@ export function Header() {
       fetch("/api/ferramentas").then((r) => r.json()),
     ])
       .then(([acessos, funcionarios, ferramentas]) => {
-        if (!Array.isArray(acessos)) return;
+        if (!Array.isArray(acessos) || !Array.isArray(funcionarios)) return;
+        const scoped = filterAcessosByRole(acessos, funcionarios, role, email);
         const getFuncionario = (id: string) => funcionarios.find((f: Funcionario) => f.id === id);
         const getFerramenta = (id: string) => ferramentas.find((f: Ferramenta) => f.id === id);
 
-        const concessao = acessos
+        const concessao = scoped
           .filter((a: Acesso) => a.status === "Pendente concessão")
           .slice(0, 5)
           .map((a: Acesso) => ({ acesso: a, funcionario: getFuncionario(a.funcionarioId), ferramenta: getFerramenta(a.ferramentaId) }));
 
-        const remocao = acessos
+        const remocao = scoped
           .filter((a: Acesso) => a.status === "Pendente remoção")
           .slice(0, 5)
           .map((a: Acesso) => ({ acesso: a, funcionario: getFuncionario(a.funcionarioId), ferramenta: getFerramenta(a.ferramentaId) }));
 
         setPendentesConcessao(concessao);
         setPendentesRemocao(remocao);
-        setPendencias(concessao.length + remocao.length);
+        setPendencias(countPendencias(scoped));
       })
       .catch(() => setPendencias(0));
-  }, [mostrarSino]);
+  }, [mostrarSino, role, email]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -135,7 +137,12 @@ export function Header() {
                         Pendente concessão — {pendentesConcessao.length}
                       </p>
                       {pendentesConcessao.map(({ acesso, funcionario, ferramenta }) => (
-                        <div key={acesso.id} className="flex items-center gap-3 px-5 py-3 border-b border-border/50 hover:bg-muted/30 transition-colors">
+                        <Link
+                          key={acesso.id}
+                          href={`/funcionarios/${acesso.funcionarioId}`}
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-5 py-3 border-b border-border/50 hover:bg-muted/30 transition-colors"
+                        >
                           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent-muted text-xs font-semibold text-accent">
                             {funcionario?.nome?.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"}
                           </div>
@@ -143,7 +150,7 @@ export function Header() {
                             <p className="text-xs font-medium text-foreground truncate">{funcionario?.nome ?? "—"}</p>
                             <p className="text-[11px] text-muted-foreground truncate">{ferramenta?.nome ?? "—"} · {funcionario?.area ?? "—"}</p>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   )}
@@ -154,7 +161,12 @@ export function Header() {
                         Pendente remoção — {pendentesRemocao.length}
                       </p>
                       {pendentesRemocao.map(({ acesso, funcionario, ferramenta }) => (
-                        <div key={acesso.id} className="flex items-center gap-3 px-5 py-3 border-b border-border/50 hover:bg-muted/30 transition-colors">
+                        <Link
+                          key={acesso.id}
+                          href={`/funcionarios/${acesso.funcionarioId}`}
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-5 py-3 border-b border-border/50 hover:bg-muted/30 transition-colors"
+                        >
                           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10 text-xs font-semibold text-destructive">
                             {funcionario?.nome?.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"}
                           </div>
@@ -162,7 +174,7 @@ export function Header() {
                             <p className="text-xs font-medium text-foreground truncate">{funcionario?.nome ?? "—"}</p>
                             <p className="text-[11px] text-muted-foreground truncate">{ferramenta?.nome ?? "—"} · {funcionario?.area ?? "—"}</p>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   )}
@@ -213,6 +225,7 @@ export function Header() {
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="rounded-xl p-2 text-header-muted transition-colors hover:bg-muted/60 hover:text-header-foreground"
           title="Sair"
+          aria-label="Sair da conta"
         >
           <LogOut size={16} />
         </button>

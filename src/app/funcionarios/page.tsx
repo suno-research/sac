@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ChevronRight, Trash2, Loader2, Users, SearchX } from "lucide-react";
+import { ChevronRight, Trash2, Loader2, Users, SearchX, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import type { Funcionario, AreaEmpresa } from "@/lib/mock-data";
 import {
   thCompactFirst,
@@ -23,6 +23,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter,
@@ -33,6 +34,42 @@ const areas: AreaEmpresa[] = [
 ];
 
 const PAGE_SIZE_OPTIONS = [10, 50, 100];
+
+type SortKey = "nome" | "cargo" | "area" | "gestor" | "status" | "dataEntrada";
+
+function SortableHeader({
+  label,
+  sortKey,
+  activeKey,
+  sortDir,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeKey: SortKey;
+  sortDir: "asc" | "desc";
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const active = activeKey === sortKey;
+  const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(sortKey)}
+      className={cn(
+        "inline-flex items-center gap-1 transition-colors hover:text-foreground",
+        active && "text-foreground",
+        className
+      )}
+      aria-label={`Ordenar por ${label}`}
+    >
+      {label}
+      <Icon className="h-3.5 w-3.5 opacity-60" aria-hidden />
+    </button>
+  );
+}
 
 function TableSkeleton() {
   return (
@@ -83,6 +120,7 @@ function EmptyTableState({
 
 export default function FuncionariosPage() {
   const { data: session } = useSession();
+  const { toast } = useToast();
   const isGestor = session?.user?.role === "gestor";
   const isUser = session?.user?.role === "user";
   const isTI = session?.user?.role === "ti";
@@ -97,6 +135,8 @@ export default function FuncionariosPage() {
   const [gestor, setGestor] = useState<string>("todos");
   const [pageSize, setPageSize] = useState(10);
   const [currentPageByKey, setCurrentPageByKey] = useState<Record<string, number>>({});
+  const [sortKey, setSortKey] = useState<SortKey>("nome");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const [modalArquivar, setModalArquivar] = useState(false);
   const [funcParaArquivar, setFuncParaArquivar] = useState<Funcionario | null>(null);
@@ -150,7 +190,40 @@ export default function FuncionariosPage() {
     });
   }, [listaAtual, busca, area, gestor]);
 
-  const paginationKey = `${aba}|${busca}|${area}|${gestor}|${pageSize}`;
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    const dir = sortDir === "asc" ? 1 : -1;
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "nome":
+          cmp = a.nome.localeCompare(b.nome, "pt-BR");
+          break;
+        case "cargo":
+          cmp = a.cargo.localeCompare(b.cargo, "pt-BR");
+          break;
+        case "area":
+          cmp = a.area.localeCompare(b.area, "pt-BR");
+          break;
+        case "gestor": {
+          const ga = a.gestorId ? getFuncionarioById(a.gestorId)?.nome ?? "" : "";
+          const gb = b.gestorId ? getFuncionarioById(b.gestorId)?.nome ?? "" : "";
+          cmp = ga.localeCompare(gb, "pt-BR");
+          break;
+        }
+        case "status":
+          cmp = a.status.localeCompare(b.status, "pt-BR");
+          break;
+        case "dataEntrada":
+          cmp = (a.dataEntrada ?? "").localeCompare(b.dataEntrada ?? "");
+          break;
+      }
+      return cmp * dir;
+    });
+    return list;
+  }, [filtered, sortKey, sortDir, getFuncionarioById]);
+
+  const paginationKey = `${aba}|${busca}|${area}|${gestor}|${pageSize}|${sortKey}|${sortDir}`;
   const currentPage = currentPageByKey[paginationKey] ?? 1;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -166,8 +239,17 @@ export default function FuncionariosPage() {
 
   const paginated = useMemo(() => {
     const start = (safePage - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, safePage, pageSize]);
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, safePage, pageSize]);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
 
   const hasFilters = Boolean(busca || area !== "todas" || gestor !== "todos");
 
@@ -189,8 +271,9 @@ export default function FuncionariosPage() {
       if (!res.ok) throw new Error();
       setFuncionarios((prev) => prev.filter((f) => f.id !== funcParaArquivar.id));
       setModalArquivar(false);
+      toast("Funcionário arquivado com sucesso.");
     } catch {
-      console.error("Erro ao arquivar");
+      toast("Erro ao arquivar funcionário.", "error");
     } finally {
       setArquivando(false);
     }
@@ -254,11 +337,11 @@ export default function FuncionariosPage() {
           showClear={hasFilters}
           onClear={clearFilters}
         >
-          <FilterSelect value={area} onChange={setArea}>
+          <FilterSelect value={area} onChange={setArea} aria-label="Filtrar por área">
             <option value="todas">Todas as áreas</option>
             {areas.map((a) => <option key={a} value={a}>{a}</option>)}
           </FilterSelect>
-          <FilterSelect value={gestor} onChange={setGestor}>
+          <FilterSelect value={gestor} onChange={setGestor} aria-label="Filtrar por gestor">
             <option value="todos">Todos os gestores</option>
             {gestores.map((g) => g && <option key={g.id} value={g.id}>{g.nome}</option>)}
           </FilterSelect>
@@ -298,12 +381,24 @@ export default function FuncionariosPage() {
             </colgroup>
             <thead className="bg-muted/40">
               <tr>
-                <th className={thCompactFirst} scope="col">Nome</th>
-                <th className={thCompactMid} scope="col">Cargo</th>
-                <th className={thCompactMid} scope="col">Área</th>
-                <th className={thCompactMid} scope="col">Gestor</th>
-                <th className={thCompactMid} scope="col">Status</th>
-                <th className={thCompactMid} scope="col">Entrada</th>
+                <th className={thCompactFirst} scope="col">
+                  <SortableHeader label="Nome" sortKey="nome" activeKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                </th>
+                <th className={thCompactMid} scope="col">
+                  <SortableHeader label="Cargo" sortKey="cargo" activeKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                </th>
+                <th className={thCompactMid} scope="col">
+                  <SortableHeader label="Área" sortKey="area" activeKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                </th>
+                <th className={thCompactMid} scope="col">
+                  <SortableHeader label="Gestor" sortKey="gestor" activeKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                </th>
+                <th className={thCompactMid} scope="col">
+                  <SortableHeader label="Status" sortKey="status" activeKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                </th>
+                <th className={thCompactMid} scope="col">
+                  <SortableHeader label="Entrada" sortKey="dataEntrada" activeKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                </th>
                 <th className={thCompactLast} scope="col">Acessos</th>
               </tr>
             </thead>

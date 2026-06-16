@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -10,6 +13,7 @@ type FilterBarProps = {
   onClear?: () => void;
   showClear?: boolean;
   className?: string;
+  debounceMs?: number;
 };
 
 const selectClass =
@@ -20,14 +24,21 @@ export function FilterSelect({
   onChange,
   children,
   className,
+  "aria-label": ariaLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
   children: React.ReactNode;
   className?: string;
+  "aria-label"?: string;
 }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={cn(selectClass, className)}>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label={ariaLabel}
+      className={cn(selectClass, className)}
+    >
       {children}
     </select>
   );
@@ -41,17 +52,36 @@ export function FilterBar({
   onClear,
   showClear,
   className,
+  debounceMs = 300,
 }: FilterBarProps) {
+  const [localValue, setLocalValue] = useState(searchValue);
+  const [prevSearchValue, setPrevSearchValue] = useState(searchValue);
+
+  if (searchValue !== prevSearchValue) {
+    setPrevSearchValue(searchValue);
+    setLocalValue(searchValue);
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (localValue !== searchValue) {
+        onSearchChange(localValue);
+      }
+    }, debounceMs);
+    return () => window.clearTimeout(timer);
+  }, [localValue, searchValue, onSearchChange, debounceMs]);
+
   return (
     <div className={cn("flex flex-wrap items-center gap-3 mb-8", className)}>
       <div className="relative min-w-[280px] flex-1 max-w-md">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground pointer-events-none" aria-hidden />
         <Input
-          type="text"
+          type="search"
           placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
           className="h-11 pl-11 text-[15px] rounded-xl"
-          value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
         />
       </div>
       {children}

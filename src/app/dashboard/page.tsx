@@ -123,34 +123,38 @@ export default function DashboardPage() {
       value: totalAtivos,
       icon: <Users className="h-5 w-5" />,
       iconClassName: "text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400",
+      href: "/funcionarios",
     },
     {
       label: "Acessos a conceder",
       value: pendentesConcessao,
       icon: <Clock className="h-5 w-5" />,
       iconClassName: "text-warning bg-warning-muted",
+      href: role === "ti" || role === "gestor" ? "/pendencias" : undefined,
     },
     {
       label: "Acessos a remover",
       value: pendentesRemocao,
       icon: <AlertCircle className="h-5 w-5" />,
       iconClassName: "text-accent bg-accent-muted",
+      href: role === "ti" || role === "gestor" ? "/pendencias" : undefined,
     },
     {
       label: "Ferramentas cadastradas",
       value: totalFerramentas,
       icon: <Grid className="h-5 w-5" />,
       iconClassName: "text-muted-foreground bg-muted",
+      href: "/ferramentas",
     },
   ];
 
   if (loading) {
     return (
       <div className="space-y-8">
-        <div style={{ height: 32, width: 200, background: "#F3F4F6", borderRadius: 8 }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
+        <div className="h-8 w-52 rounded-lg bg-muted/60 animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} style={{ height: 120, background: "#F3F4F6", borderRadius: 16 }} />
+            <div key={i} className="h-[180px] rounded-xl bg-muted/60 animate-pulse" />
           ))}
         </div>
       </div>

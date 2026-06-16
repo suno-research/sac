@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, SearchX, Wrench } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,8 @@ import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
 
 const categorias: CategoriaFerramenta[] = [
   "Comunicação",
@@ -72,6 +74,7 @@ function TableSkeleton() {
 
 export default function FerramentasPage() {
   const { data: session } = useSession();
+  const { toast } = useToast();
   const isTI = session?.user?.role === "ti";
 
   const [ferramentas, setFerramentas] = useState<Ferramenta[]>([]);
@@ -136,6 +139,7 @@ export default function FerramentasPage() {
       setFerramentas((prev) => [...prev, criada]);
       setNovaFerramenta(FERRAMENTA_VAZIA);
       setModalAberto(false);
+      toast("Ferramenta criada com sucesso.");
     } catch {
       setErro("Erro ao salvar. Tente novamente.");
     } finally {
@@ -173,6 +177,7 @@ export default function FerramentasPage() {
       const atualizada = await res.json();
       setFerramentas((prev) => prev.map((f) => (f.id === atualizada.id ? atualizada : f)));
       setModalEdicao(false);
+      toast("Ferramenta atualizada com sucesso.");
     } catch {
       setErro("Erro ao salvar. Tente novamente.");
     } finally {
@@ -195,6 +200,7 @@ export default function FerramentasPage() {
       if (!res.ok) throw new Error();
       setFerramentas((prev) => prev.filter((f) => f.id !== ferramentaSelecionada.id));
       setModalConfirmDelete(false);
+      toast("Ferramenta excluída com sucesso.");
     } catch {
       setErro("Erro ao excluir. Tente novamente.");
     } finally {
@@ -261,8 +267,18 @@ export default function FerramentasPage() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="pl-10 pr-10 py-14 text-center text-[15px] text-muted-foreground">
-                  Nenhuma ferramenta encontrada.
+                <td colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={hasFilters ? SearchX : Wrench}
+                    title={hasFilters ? "Nenhuma ferramenta encontrada" : "Nenhuma ferramenta cadastrada"}
+                    description={
+                      hasFilters
+                        ? "Ajuste os filtros ou limpe a busca para ver mais resultados."
+                        : "As ferramentas cadastradas aparecerão nesta lista."
+                    }
+                    actionLabel={hasFilters ? "Limpar filtros" : undefined}
+                    onAction={hasFilters ? () => { setBusca(""); setCategoria("todas"); setTipo("todos"); } : undefined}
+                  />
                 </td>
               </tr>
             ) : (
