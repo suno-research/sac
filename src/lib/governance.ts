@@ -18,6 +18,18 @@ export function filterFuncionariosByRole<T extends FuncionarioScope>(
   return [self];
 }
 
+export function filterByFuncionarioScope<T extends { funcionarioId: string }>(
+  items: T[],
+  funcionarios: FuncionarioScope[],
+  role: string,
+  userEmail: string
+): T[] {
+  const allowedIds = new Set(
+    filterFuncionariosByRole(funcionarios, role, userEmail).map((f) => f.id)
+  );
+  return items.filter((item) => allowedIds.has(item.funcionarioId));
+}
+
 export function formatOrigemAcesso(concedidoPor: string | undefined): string {
   if (!concedidoPor) return "—";
   const lower = concedidoPor.toLowerCase();

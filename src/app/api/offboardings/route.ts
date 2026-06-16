@@ -2,11 +2,30 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getSheetData, appendSheetRow, updateSheetRow } from "@/lib/sheets";
+import { filterByFuncionarioScope } from "@/lib/governance";
 
 export async function GET() {
   try {
-    const rows = await getSheetData("offboardings!A2:G");
-    const offboardings = rows.map((row) => ({
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    const role = session.user.role ?? "user";
+    const userEmail = session.user.email ?? "";
+
+    const [offRows, funcRows] = await Promise.all([
+      getSheetData("offboardings!A2:G"),
+      getSheetData("funcionarios!A2:I"),
+    ]);
+
+    const funcionarios = funcRows.map((row) => ({
+      id: row[0] || "",
+      email: row[2] || "",
+      gestorId: row[5] || undefined,
+    }));
+
+    const offboardings = offRows.map((row) => ({
       id: row[0] || "",
       funcionarioId: row[1] || "",
       dataDesligamento: row[2] || "",
@@ -15,7 +34,15 @@ export async function GET() {
       status: row[5] || "",
       responsavelId: row[6] || "",
     }));
-    return NextResponse.json(offboardings.filter((o) => o.id));
+
+    const filtered = filterByFuncionarioScope(
+      offboardings.filter((o) => o.id),
+      funcionarios,
+      role,
+      userEmail
+    );
+
+    return NextResponse.json(filtered);
   } catch (error) {
     console.error("Erro ao buscar offboardings:", error);
     return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });
