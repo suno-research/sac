@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { Pencil, Plus, Trash2, Loader2, Shield } from "lucide-react";
+import { Pencil, Plus, Trash2, Loader2, Shield, SearchX } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,12 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 
 const AREAS = ["TI", "Marketing", "Financeiro", "Editorial", "Comercial", "RH", "Jurídico", "Operações"];
+
+const PAGE_SIZE_OPTIONS = [10, 30, 50, 100];
+const MAX_BADGES_VISIBLE = 5;
+
+type SortOrder = "az" | "za" | "mais_ferramentas" | "menos_ferramentas";
+type QtdFerramentas = "todos" | "ate_5" | "6_10" | "mais_10";
 
 interface PerfilPadrao {
   id: string;
@@ -53,9 +61,97 @@ function PerfisSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
       {[1, 2, 3].map((i) => (
-        <div key={i} style={{ height: 280, background: "#F3F4F6", borderRadius: 16 }} />
+        <div key={i} className="h-[320px] rounded-xl bg-muted/60 animate-pulse" />
       ))}
     </div>
+  );
+}
+
+function PerfilCard({
+  perfil,
+  index,
+  ferramentas,
+  isTI,
+  onEdit,
+  onDelete,
+}: {
+  perfil: PerfilPadrao;
+  index: number;
+  ferramentas: Ferramenta[];
+  isTI: boolean;
+  onEdit: (p: PerfilPadrao) => void;
+  onDelete: (p: PerfilPadrao) => void;
+}) {
+  const ferrsDoPerfil = perfil.ferramentaIds
+    .map((id) => ferramentas.find((f) => f.id === id))
+    .filter(Boolean) as Ferramenta[];
+  const visiveis = ferrsDoPerfil.slice(0, MAX_BADGES_VISIBLE);
+  const restantes = ferrsDoPerfil.length - visiveis.length;
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.04 }}
+      className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-shadow duration-200 hover:shadow-elevated"
+    >
+      <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5 sm:px-8 sm:py-6">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold text-foreground tracking-tight sm:text-xl">
+            {perfil.cargo}
+          </h2>
+          <Badge variant="secondary" className="mt-2.5">
+            {perfil.area}
+          </Badge>
+        </div>
+        {isTI && (
+          <div className="flex shrink-0 items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(perfil)} aria-label={`Editar ${perfil.cargo}`}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(perfil)}
+              className="text-destructive hover:text-destructive"
+              aria-label={`Excluir ${perfil.cargo}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col px-6 py-6 sm:px-8 sm:py-7">
+        <p className="mb-6 line-clamp-3 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+          {perfil.descricao || "Sem descrição."}
+        </p>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Ferramentas incluídas
+        </p>
+        <div className="flex min-h-[2.5rem] flex-1 flex-wrap content-start gap-2">
+          {visiveis.map((f) => (
+            <Badge
+              key={f.id}
+              variant={f.tipo === "Passbolt" ? "warning" : "secondary"}
+              className="max-w-full truncate px-3 py-1.5 text-xs"
+            >
+              {f.nome}
+            </Badge>
+          ))}
+          {restantes > 0 && (
+            <Badge variant="muted" className="px-3 py-1.5 text-xs">
+              +{restantes}
+            </Badge>
+          )}
+          {ferrsDoPerfil.length === 0 && (
+            <span className="text-sm text-muted-foreground">Nenhuma ferramenta</span>
+          )}
+        </div>
+        <p className="mt-auto border-t border-border pt-5 text-sm font-medium text-muted-foreground">
+          {perfil.ferramentaIds.length} ferramenta{perfil.ferramentaIds.length !== 1 ? "s" : ""} no pacote
+        </p>
+      </div>
+    </motion.article>
   );
 }
 
@@ -80,6 +176,13 @@ export default function PerfisPage() {
   const [modalConfirmDelete, setModalConfirmDelete] = useState(false);
   const [perfilParaExcluir, setPerfilParaExcluir] = useState<PerfilPadrao | null>(null);
 
+  const [busca, setBusca] = useState("");
+  const [areaFiltro, setAreaFiltro] = useState("todas");
+  const [qtdFerramentas, setQtdFerramentas] = useState<QtdFerramentas>("todos");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("az");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPageByKey, setCurrentPageByKey] = useState<Record<string, number>>({});
+
   useEffect(() => {
     Promise.all([
       fetch("/api/perfis").then((r) => r.json()),
@@ -93,7 +196,91 @@ export default function PerfisPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const getFerramentaById = (id: string) => ferramentas.find((f) => f.id === id);
+  const ferramentasPorNome = useMemo(() => {
+    const map = new Map(ferramentas.map((f) => [f.id, f.nome]));
+    return map;
+  }, [ferramentas]);
+
+  const areasDisponiveis = useMemo(
+    () =>
+      [...new Set(perfis.map((p) => p.area).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+      ),
+    [perfis]
+  );
+
+  const filtered = useMemo(() => {
+    const term = busca.toLowerCase();
+    return perfis.filter((p) => {
+      const nomesFerramentas = p.ferramentaIds
+        .map((id) => ferramentasPorNome.get(id) ?? "")
+        .join(" ")
+        .toLowerCase();
+
+      const matchBusca =
+        !term ||
+        p.cargo.toLowerCase().includes(term) ||
+        p.area.toLowerCase().includes(term) ||
+        p.descricao.toLowerCase().includes(term) ||
+        nomesFerramentas.includes(term);
+
+      const matchArea = areaFiltro === "todas" || p.area === areaFiltro;
+
+      const qtd = p.ferramentaIds.length;
+      const matchQtd =
+        qtdFerramentas === "todos" ||
+        (qtdFerramentas === "ate_5" && qtd <= 5) ||
+        (qtdFerramentas === "6_10" && qtd >= 6 && qtd <= 10) ||
+        (qtdFerramentas === "mais_10" && qtd > 10);
+
+      return matchBusca && matchArea && matchQtd;
+    });
+  }, [perfis, busca, areaFiltro, qtdFerramentas, ferramentasPorNome]);
+
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    list.sort((a, b) => {
+      if (sortOrder === "mais_ferramentas") {
+        return b.ferramentaIds.length - a.ferramentaIds.length;
+      }
+      if (sortOrder === "menos_ferramentas") {
+        return a.ferramentaIds.length - b.ferramentaIds.length;
+      }
+      const cmp = a.cargo.localeCompare(b.cargo, "pt-BR");
+      return sortOrder === "az" ? cmp : -cmp;
+    });
+    return list;
+  }, [filtered, sortOrder]);
+
+  const paginationKey = `${busca}|${areaFiltro}|${qtdFerramentas}|${pageSize}|${sortOrder}`;
+  const currentPage = currentPageByKey[paginationKey] ?? 1;
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+
+  const setCurrentPage = (page: number) => {
+    setCurrentPageByKey((prev) => ({ ...prev, [paginationKey]: page }));
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPageByKey((prev) => ({
+      ...prev,
+      [`${busca}|${areaFiltro}|${qtdFerramentas}|${size}|${sortOrder}`]: 1,
+    }));
+  };
+
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, safePage, pageSize]);
+
+  const hasFilters = Boolean(busca || areaFiltro !== "todas" || qtdFerramentas !== "todos");
+
+  const clearFilters = () => {
+    setBusca("");
+    setAreaFiltro("todas");
+    setQtdFerramentas("todos");
+  };
 
   const ferramentasAgrupadas = ferramentas.reduce<Record<string, Ferramenta[]>>((acc, f) => {
     if (!acc[f.categoria]) acc[f.categoria] = [];
@@ -233,61 +420,92 @@ export default function PerfisPage() {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      {perfis.length > 0 && (
+        <FilterBar
+          searchPlaceholder="Buscar por cargo, área, descrição ou ferramenta..."
+          searchValue={busca}
+          onSearchChange={setBusca}
+          showClear={hasFilters}
+          onClear={clearFilters}
+        >
+          <FilterSelect value={areaFiltro} onChange={setAreaFiltro} aria-label="Filtrar por área">
+            <option value="todas">Todas as áreas</option>
+            {areasDisponiveis.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </FilterSelect>
+          <FilterSelect
+            value={qtdFerramentas}
+            onChange={(v) => setQtdFerramentas(v as QtdFerramentas)}
+            aria-label="Filtrar por quantidade de ferramentas"
+          >
+            <option value="todos">Todas as quantidades</option>
+            <option value="ate_5">Até 5 ferramentas</option>
+            <option value="6_10">6 a 10 ferramentas</option>
+            <option value="mais_10">Mais de 10 ferramentas</option>
+          </FilterSelect>
+          <FilterSelect
+            value={sortOrder}
+            onChange={(v) => setSortOrder(v as SortOrder)}
+            aria-label="Ordenar perfis"
+          >
+            <option value="az">Ordenar: A-Z</option>
+            <option value="za">Ordenar: Z-A</option>
+            <option value="mais_ferramentas">Mais ferramentas</option>
+            <option value="menos_ferramentas">Menos ferramentas</option>
+          </FilterSelect>
+        </FilterBar>
+      )}
+
+      <div className="min-w-0 space-y-8">
         {perfis.length === 0 ? (
-          <div className="col-span-full rounded-xl border border-border bg-card shadow-card">
+          <div className="rounded-xl border border-border bg-card shadow-card">
             <EmptyState
               icon={Shield}
               title="Nenhum perfil padrão cadastrado"
               description="Perfis definem pacotes de acesso por cargo e aceleram o onboarding de novos colaboradores."
             />
           </div>
+        ) : sorted.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card shadow-card">
+            <EmptyState
+              icon={SearchX}
+              title="Nenhum perfil encontrado"
+              description="Ajuste os filtros ou limpe a busca para ver mais resultados."
+              actionLabel="Limpar filtros"
+              onAction={clearFilters}
+            />
+          </div>
         ) : (
-        perfis.map((perfil, index) => {
-          const ferrsDoPerfil = perfil.ferramentaIds.map(getFerramentaById).filter(Boolean);
-          return (
-            <motion.article
-              key={perfil.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: index * 0.06 }}
-              className="rounded-xl border border-border bg-card shadow-card overflow-hidden flex flex-col hover:shadow-elevated transition-shadow duration-200"
-            >
-              <div className="px-8 py-7 border-b border-border flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground tracking-tight">{perfil.cargo}</h2>
-                  <Badge variant="secondary" className="mt-3">{perfil.area}</Badge>
-                </div>
-                <div className="flex items-center gap-1">
-                  {isTI && (
-                    <>
-                      <Button variant="ghost" size="sm" onClick={() => abrirEdicao(perfil)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => abrirConfirmDelete(perfil)} className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="px-8 py-8 flex-1 flex flex-col">
-                <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">{perfil.descricao}</p>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Ferramentas incluídas</p>
-                <div className="flex flex-wrap gap-2.5 flex-1">
-                  {ferrsDoPerfil.map((f) => f && (
-                    <Badge key={f.id} variant={f.tipo === "Passbolt" ? "warning" : "secondary"} className="text-xs px-3.5 py-1.5">
-                      {f.nome}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="mt-8 pt-6 border-t border-border text-sm text-muted-foreground font-medium">
-                  {perfil.ferramentaIds.length} ferramentas no pacote
-                </p>
-              </div>
-            </motion.article>
-          );
-        })
+          <div className="grid grid-cols-1 items-stretch gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {paginated.map((perfil, index) => (
+              <PerfilCard
+                key={perfil.id}
+                perfil={perfil}
+                index={index}
+                ferramentas={ferramentas}
+                isTI={isTI}
+                onEdit={abrirEdicao}
+                onDelete={abrirConfirmDelete}
+              />
+            ))}
+          </div>
+        )}
+
+        {sorted.length > 0 && (
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+            <TablePagination
+              totalItems={sorted.length}
+              currentPage={safePage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="perfis"
+            />
+          </div>
         )}
       </div>
 
