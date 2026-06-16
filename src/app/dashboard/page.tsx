@@ -186,13 +186,13 @@ export default function DashboardPage() {
 
   return (
     <PageMotion>
-      <div className="space-y-10">
+      <div className="space-y-10 min-w-0">
         <PageHeader
           title="Dashboard"
           description="Visão geral do controle de acessos da Suno"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-6 xl:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-6 xl:gap-8 min-w-0">
           {kpis.map((kpi, i) => (
             <KpiCard key={kpi.label} {...kpi} index={i} />
           ))}
@@ -230,10 +230,10 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 min-w-0">
           <TableCard
             title="Últimas movimentações"
-            contentClassName="overflow-x-auto md:overflow-x-visible"
+            className="min-w-0"
             action={
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/funcionarios">
@@ -242,12 +242,12 @@ export default function DashboardPage() {
               </Button>
             }
           >
-            <table className="w-full min-w-0 table-fixed">
+            <table className="w-full max-w-full table-fixed">
               <colgroup>
-                <col style={{ width: "42%" }} />
+                <col style={{ width: "40%" }} />
                 <col style={{ width: "22%" }} />
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "18%" }} />
+                <col style={{ width: "19%" }} />
+                <col style={{ width: "19%" }} />
               </colgroup>
               <thead className="bg-muted/40">
                 <tr>
@@ -264,23 +264,28 @@ export default function DashboardPage() {
                   return (
                     <tr key={mov.id} className={trHover}>
                       <td className={tdDashName}>
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          {func && <Avatar name={func.nome} size="md" />}
-                          <span className="truncate font-medium text-foreground">{func?.nome ?? "—"}</span>
+                        <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
+                          {func && <Avatar name={func.nome} size="md" className="shrink-0" />}
+                          <span className="min-w-0 truncate font-medium text-foreground">{func?.nome ?? "—"}</span>
                         </div>
                       </td>
                       <td className={tdDashMid}>
-                        <Badge variant={mov.tipo === "onboarding" ? "success" : "destructive"} className="text-[11px]">
+                        <Badge
+                          variant={mov.tipo === "onboarding" ? "success" : "destructive"}
+                          className="max-w-full truncate text-[11px]"
+                        >
                           {mov.tipo === "onboarding" ? "Onboarding" : "Offboarding"}
                         </Badge>
                       </td>
                       <td className={`${tdDashMid} tabular-nums text-xs`}>
-                        {new Date(mov.data + "T00:00:00").toLocaleDateString("pt-BR")}
+                        <span className="whitespace-nowrap">
+                          {new Date(mov.data + "T00:00:00").toLocaleDateString("pt-BR")}
+                        </span>
                       </td>
                       <td className={tdDashLast}>
                         <Badge
                           variant={movimentacaoStatusVariant(mov.status)}
-                          className="text-[11px]"
+                          className="max-w-full truncate text-[11px]"
                         >
                           {statusLabel}
                         </Badge>
@@ -294,15 +299,15 @@ export default function DashboardPage() {
 
           <TableCard
             title="Pendências de acesso"
-            contentClassName="overflow-x-auto md:overflow-x-visible"
+            className="min-w-0"
             action={
               <Badge variant="warning">{pendentesConcessao + pendentesRemocao} itens</Badge>
             }
           >
-            <table className="w-full min-w-0 table-fixed">
+            <table className="w-full max-w-full table-fixed">
               <colgroup>
-                <col style={{ width: "46%" }} />
-                <col style={{ width: "22%" }} />
+                <col style={{ width: "44%" }} />
+                <col style={{ width: "24%" }} />
                 <col style={{ width: "32%" }} />
               </colgroup>
               <thead className="bg-muted/40">
@@ -325,9 +330,9 @@ export default function DashboardPage() {
                     return (
                       <tr key={p.funcionarioId} className={trHover}>
                         <td className={tdDashName}>
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            {func && <Avatar name={func.nome} size="md" />}
-                            <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
+                            {func && <Avatar name={func.nome} size="md" className="shrink-0" />}
+                            <div className="min-w-0 overflow-hidden">
                               <p className="truncate font-medium text-foreground">{func?.nome ?? "—"}</p>
                               <p className="truncate text-xs text-muted-foreground">{func?.cargo}</p>
                             </div>
@@ -337,9 +342,9 @@ export default function DashboardPage() {
                           <span className="block truncate">{func?.area}</span>
                         </td>
                         <td className={tdDashLast}>
-                          <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs">
-                            <Link href={`/funcionarios/${p.funcionarioId}`}>
-                              Ver acessos <ChevronRight className="h-3.5 w-3.5" />
+                          <Button variant="ghost" size="sm" asChild className="h-8 max-w-full px-2 text-xs">
+                            <Link href={`/funcionarios/${p.funcionarioId}`} className="truncate">
+                              Ver acessos <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                             </Link>
                           </Button>
                         </td>
@@ -354,6 +359,8 @@ export default function DashboardPage() {
 
         <TableCard
           title="Funcionários"
+          className="min-w-0"
+          contentClassName="overflow-hidden max-lg:overflow-x-auto"
           action={
             <Button variant="ghost" size="sm" asChild>
               <Link href="/funcionarios">

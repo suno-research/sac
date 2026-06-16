@@ -41,8 +41,8 @@ export const thDashLast =
   "px-2 pr-4 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap";
 
 export const tdDashName =
-  "pl-4 pr-2 py-4 text-sm min-w-0 leading-snug";
+  "pl-4 pr-2 py-4 text-sm min-w-0 leading-snug overflow-hidden";
 export const tdDashMid =
-  "px-2 py-4 text-sm whitespace-nowrap leading-snug text-muted-foreground";
+  "px-2 py-4 text-sm min-w-0 leading-snug text-muted-foreground overflow-hidden";
 export const tdDashLast =
-  "px-2 pr-4 py-4 text-sm leading-snug";
+  "px-2 pr-4 py-4 text-sm min-w-0 leading-snug overflow-hidden";
