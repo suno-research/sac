@@ -7,10 +7,18 @@ import { useSession } from "next-auth/react";
 import { ChevronRight, Trash2, Loader2 } from "lucide-react";
 import type { Funcionario, AreaEmpresa } from "@/lib/mock-data";
 import {
-  thFirst, thMid, thLast, tdName, tdCargo, tdMid, tdLast, trHover,
+  thCompactFirst,
+  thCompactMid,
+  thCompactLast,
+  tdCompactName,
+  tdCompactText,
+  tdCompactCargo,
+  tdCompactActions,
+  trHover,
 } from "@/lib/table-classes";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Avatar } from "@/components/ui/avatar";
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
@@ -22,6 +30,8 @@ import {
 const areas: AreaEmpresa[] = [
   "TI", "Marketing", "Financeiro", "Editorial", "Comercial", "RH", "Jurídico", "Operações",
 ];
+
+const PAGE_SIZE_OPTIONS = [10, 50, 100];
 
 function TableSkeleton() {
   return (
@@ -47,8 +57,9 @@ export default function FuncionariosPage() {
   const [busca, setBusca] = useState("");
   const [area, setArea] = useState<string>("todas");
   const [gestor, setGestor] = useState<string>("todos");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPageByKey, setCurrentPageByKey] = useState<Record<string, number>>({});
 
-  // Modal arquivar
   const [modalArquivar, setModalArquivar] = useState(false);
   const [funcParaArquivar, setFuncParaArquivar] = useState<Funcionario | null>(null);
   const [arquivando, setArquivando] = useState(false);
@@ -101,7 +112,26 @@ export default function FuncionariosPage() {
     });
   }, [listaAtual, busca, area, gestor]);
 
-  const hasFilters = busca || area !== "todas" || gestor !== "todos";
+  const paginationKey = `${aba}|${busca}|${area}|${gestor}|${pageSize}`;
+  const currentPage = currentPageByKey[paginationKey] ?? 1;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+
+  const setCurrentPage = (page: number) => {
+    setCurrentPageByKey((prev) => ({ ...prev, [paginationKey]: page }));
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPageByKey((prev) => ({ ...prev, [`${aba}|${busca}|${area}|${gestor}|${size}`]: 1 }));
+  };
+
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safePage, pageSize]);
+
+  const hasFilters = Boolean(busca || area !== "todas" || gestor !== "todos");
 
   const clearFilters = () => {
     setBusca("");
@@ -149,7 +179,6 @@ export default function FuncionariosPage() {
         ) : undefined}
       />
 
-      {/* Abas */}
       {!isGestor && !isUser && (
         <div className="flex gap-1 p-1 bg-muted/40 rounded-xl w-fit border border-border mb-2">
           <button
@@ -176,100 +205,130 @@ export default function FuncionariosPage() {
       )}
 
       {(isTI || isGestor) && (
-      <FilterBar
-        searchPlaceholder="Buscar por nome ou email..."
-        searchValue={busca}
-        onSearchChange={setBusca}
-        showClear={hasFilters}
-        onClear={clearFilters}
-      >
-        <FilterSelect value={area} onChange={setArea}>
-          <option value="todas">Todas as áreas</option>
-          {areas.map((a) => <option key={a} value={a}>{a}</option>)}
-        </FilterSelect>
-        <FilterSelect value={gestor} onChange={setGestor}>
-          <option value="todos">Todos os gestores</option>
-          {gestores.map((g) => g && <option key={g.id} value={g.id}>{g.nome}</option>)}
-        </FilterSelect>
-      </FilterBar>
+        <FilterBar
+          searchPlaceholder="Buscar por nome ou email..."
+          searchValue={busca}
+          onSearchChange={setBusca}
+          showClear={hasFilters}
+          onClear={clearFilters}
+        >
+          <FilterSelect value={area} onChange={setArea}>
+            <option value="todas">Todas as áreas</option>
+            {areas.map((a) => <option key={a} value={a}>{a}</option>)}
+          </FilterSelect>
+          <FilterSelect value={gestor} onChange={setGestor}>
+            <option value="todos">Todos os gestores</option>
+            {gestores.map((g) => g && <option key={g.id} value={g.id}>{g.nome}</option>)}
+          </FilterSelect>
+        </FilterBar>
       )}
 
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted/40">
-            <tr>
-              <th className={thFirst}>Nome</th>
-              <th className={`${thMid} min-w-[220px]`}>Cargo</th>
-              <th className={thMid}>Área</th>
-              <th className={thMid}>Gestor</th>
-              <th className={thMid}>Status</th>
-              <th className={thMid}>Entrada</th>
-              <th className={thLast} />
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[960px] table-fixed">
+            <colgroup>
+              <col style={{ width: "24%" }} />
+              <col style={{ width: "17%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "18%" }} />
+            </colgroup>
+            <thead className="bg-muted/40">
               <tr>
-                <td colSpan={7} className="pl-10 pr-10 py-14 text-center text-[15px] text-muted-foreground">
-                  Nenhum funcionário encontrado.
-                </td>
+                <th className={thCompactFirst}>Nome</th>
+                <th className={thCompactMid}>Cargo</th>
+                <th className={thCompactMid}>Área</th>
+                <th className={thCompactMid}>Gestor</th>
+                <th className={thCompactMid}>Status</th>
+                <th className={thCompactMid}>Entrada</th>
+                <th className={thCompactLast}>Acessos</th>
               </tr>
-            ) : (
-              filtered.map((func) => {
-                const gestorNome = func.gestorId ? getFuncionarioById(func.gestorId)?.nome : "—";
-                return (
-                  <tr key={func.id} className={trHover}>
-                    <td className={tdName}>
-                      <div className="flex items-center gap-4">
-                        <Avatar name={func.nome} size="md" />
-                        <div className="space-y-1">
-                          <p className="font-medium text-foreground">{func.nome}</p>
-                          <p className="text-xs text-muted-foreground">{func.email}</p>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-14 text-center text-[15px] text-muted-foreground">
+                    Nenhum funcionário encontrado.
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((func) => {
+                  const gestorNome = func.gestorId ? getFuncionarioById(func.gestorId)?.nome : "—";
+                  return (
+                    <tr key={func.id} className={trHover}>
+                      <td className={tdCompactName}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar name={func.nome} size="md" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-foreground truncate">{func.nome}</p>
+                            <p className="text-xs text-muted-foreground truncate">{func.email}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className={tdCargo}>{func.cargo}</td>
-                    <td className={tdMid}><Badge variant="secondary">{func.area}</Badge></td>
-                    <td className={tdMid}>{gestorNome}</td>
-                    <td className={tdMid}>
-                      <Badge variant={func.status === "Ativo" ? "success" : "muted"}>{func.status}</Badge>
-                    </td>
-                    <td className={tdMid}>
-                      {func.dataEntrada ? new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
-                    </td>
-                    <td className={`${tdLast} text-right`}>
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/funcionarios/${func.id}`}>
-                            Ver acessos <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        {isTI && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => { setFuncParaArquivar(func); setModalArquivar(true); }}
-                          >
-                            <Trash2 className="h-4 w-4" />
+                      </td>
+                      <td className={tdCompactCargo}>
+                        <span className="block truncate" title={func.cargo}>
+                          {func.cargo}
+                        </span>
+                      </td>
+                      <td className={tdCompactText}>
+                        <Badge variant="secondary" className="max-w-full truncate">
+                          {func.area}
+                        </Badge>
+                      </td>
+                      <td className={`${tdCompactText} truncate`} title={gestorNome ?? undefined}>
+                        {gestorNome}
+                      </td>
+                      <td className={tdCompactText}>
+                        <Badge variant={func.status === "Ativo" ? "success" : "muted"}>{func.status}</Badge>
+                      </td>
+                      <td className={tdCompactText}>
+                        {func.dataEntrada ? new Date(func.dataEntrada + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
+                      </td>
+                      <td className={tdCompactActions}>
+                        <div className="flex items-center justify-end gap-0.5">
+                          <Button variant="ghost" size="sm" asChild className="h-8 px-2.5 text-xs">
+                            <Link href={`/funcionarios/${func.id}`} title="Ver acessos">
+                              <span className="hidden lg:inline">Ver acessos</span>
+                              <span className="lg:hidden">Acessos</span>
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </Link>
                           </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          {isTI && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              title="Arquivar funcionário"
+                              onClick={() => { setFuncParaArquivar(func); setModalArquivar(true); }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
         {filtered.length > 0 && (
-          <div className="px-10 py-5 border-t border-border text-sm text-muted-foreground">
-            Exibindo {filtered.length} de {listaAtual.length} funcionários
-          </div>
+          <TablePagination
+            totalItems={filtered.length}
+            currentPage={safePage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            itemLabel="funcionários"
+          />
         )}
       </div>
 
-      {/* Modal — Confirmar arquivamento */}
       <Dialog open={modalArquivar} onOpenChange={setModalArquivar}>
         <DialogContent className="max-w-[420px]">
           <DialogHeader>
