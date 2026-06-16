@@ -26,6 +26,9 @@ export function Sidebar() {
   const role = session?.user?.role ?? "user";
   const initials = userName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
   const [pendenciasCount, setPendenciasCount] = useState(0);
+  const [profileId, setProfileId] = useState<string | null>(null);
+
+  const profileHref = userEmail && profileId ? `/funcionarios/${profileId}` : null;
 
   const navItemsFiltrados = navItems.filter((item) => {
     if (item.href === "/pendencias") return role === "ti" || role === "gestor";
@@ -45,6 +48,43 @@ export function Sidebar() {
       })
       .catch(() => setPendenciasCount(0));
   }, [pathname, role, userEmail]);
+
+  useEffect(() => {
+    if (!userEmail) return;
+    let cancelled = false;
+    fetch("/api/funcionarios/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((func) => {
+        if (!cancelled) setProfileId(func?.id ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userEmail]);
+
+  const userBlockClass = cn(
+    "flex items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors",
+    profileHref &&
+      "cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+  );
+
+  const userBlockContent = (
+    <>
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-muted text-sm font-semibold text-accent">
+        {initials}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">{userName}</p>
+        <p className="mt-0.5 truncate text-xs text-sidebar-muted">{userEmail}</p>
+      </div>
+      <span className="rounded-md bg-accent-muted px-2 py-1 text-[10px] font-semibold text-accent uppercase">
+        {role}
+      </span>
+    </>
+  );
 
   return (
     <aside
@@ -97,18 +137,19 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-sidebar-border px-4 py-6">
-        <div className="flex cursor-pointer items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors hover:bg-muted/50">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-muted text-sm font-semibold text-accent">
-            {initials}
+        {profileHref ? (
+          <Link
+            href={profileHref}
+            className={userBlockClass}
+            aria-label={`Ver perfil de ${userName}`}
+          >
+            {userBlockContent}
+          </Link>
+        ) : (
+          <div className={userBlockClass} aria-label={userName}>
+            {userBlockContent}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{userName}</p>
-            <p className="mt-0.5 truncate text-xs text-sidebar-muted">{userEmail}</p>
-          </div>
-          <span className="rounded-md bg-accent-muted px-2 py-1 text-[10px] font-semibold text-accent uppercase">
-            {role}
-          </span>
-        </div>
+        )}
       </div>
     </aside>
   );

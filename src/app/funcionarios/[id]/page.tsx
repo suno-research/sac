@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -18,7 +18,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar } from "@/components/ui/avatar";
-import { thFirst, thMid, thLast, tdFirst, tdMid, trHover } from "@/lib/table-classes";
+import { TablePagination } from "@/components/ui/table-pagination";
+import {
+  thCompactFirst,
+  thCompactMid,
+  thCompactLast,
+  tdCompactName,
+  tdCompactText,
+  tdCompactActions,
+  trHover,
+} from "@/lib/table-classes";
+
+const ACCESS_PAGE_SIZE_OPTIONS = [10, 30, 50, 100];
 
 type StatusAcesso = "Ativo" | "Pendente concessão" | "Pendente remoção" | "Sem acesso";
 
@@ -85,6 +96,8 @@ export default function FuncionarioDetailPage() {
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [offboardings, setOffboardings] = useState<Offboarding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accessPageById, setAccessPageById] = useState<Record<string, number>>({});
+  const [accessPageSize, setAccessPageSize] = useState(10);
 
   // Modal adicionar acesso
   const [modalAdicionar, setModalAdicionar] = useState(false);
@@ -135,6 +148,24 @@ export default function FuncionarioDetailPage() {
       })
       .catch(() => setLoading(false));
   }, [id]);
+
+  const accessPage = accessPageById[id] ?? 1;
+  const totalAccessPages = Math.max(1, Math.ceil(acessos.length / accessPageSize));
+  const safeAccessPage = Math.min(accessPage, totalAccessPages);
+
+  const setAccessPage = (page: number) => {
+    setAccessPageById((prev) => ({ ...prev, [id]: page }));
+  };
+
+  const paginatedAcessos = useMemo(() => {
+    const start = (safeAccessPage - 1) * accessPageSize;
+    return acessos.slice(start, start + accessPageSize);
+  }, [acessos, safeAccessPage, accessPageSize]);
+
+  const handleAccessPageSizeChange = (size: number) => {
+    setAccessPageSize(size);
+    setAccessPageById((prev) => ({ ...prev, [id]: 1 }));
+  };
 
   const getFerramentaById = (ferramentaId: string) => ferramentas.find((f) => f.id === ferramentaId);
   const getNomeFuncionario = (funcionarioId: string) =>
@@ -359,7 +390,7 @@ export default function FuncionarioDetailPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden min-w-0">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Ferramentas e acessos ({acessos.length})</CardTitle>
@@ -375,33 +406,38 @@ export default function FuncionarioDetailPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <CardContent className="p-0 min-w-0">
+          <div className="overflow-hidden max-lg:overflow-x-auto">
+            <table className="w-full max-w-full table-fixed">
+              <colgroup>
+                <col style={{ width: "24%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "18%" }} />
+                <col style={{ width: "10%" }} />
+              </colgroup>
               <thead className="bg-muted/40">
                 <tr>
-                  <th className={thFirst}>Ferramenta</th>
-                  <th className={thMid}>Categoria</th>
-                  <th className={thMid}>Tipo</th>
-                  <th className={thMid}>Status</th>
-                  <th className={thMid}>Concessão</th>
-                  <th className={thMid}>Concedido por</th>
-                  <th
-                    className={`${thLast} sticky right-0 z-10 min-w-[4.5rem] bg-muted/40 text-center`}
-                  >
-                    Ações
-                  </th>
+                  <th className={thCompactFirst}>Ferramenta</th>
+                  <th className={thCompactMid}>Categoria</th>
+                  <th className={thCompactMid}>Tipo</th>
+                  <th className={thCompactMid}>Status</th>
+                  <th className={thCompactMid}>Concessão</th>
+                  <th className={thCompactMid}>Concedido por</th>
+                  <th className={`${thCompactLast} text-center`}>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {acessos.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="pl-10 pr-10 py-14 text-center text-[15px] text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-14 text-center text-sm text-muted-foreground">
                       Nenhum acesso cadastrado.
                     </td>
                   </tr>
                 ) : (
-                  acessos.map((acesso) => {
+                  paginatedAcessos.map((acesso) => {
                     const ferramenta = getFerramentaById(acesso.ferramentaId);
                     const concedidoPorNome = acesso.concedidoPor
                       ? getNomeFuncionario(acesso.concedidoPor) !== "—"
@@ -410,32 +446,49 @@ export default function FuncionarioDetailPage() {
                       : "—";
                     return (
                       <tr key={acesso.id} className={`group ${trHover}`}>
-                        <td className={tdFirst}>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-foreground">
+                        <td className={tdCompactName}>
+                          <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                            <p className="min-w-0 truncate font-medium text-foreground">
                               {ferramenta?.nome ?? acesso.ferramentaId}
                             </p>
                             {ferramenta?.url && (
-                              <a href={ferramenta.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
+                              <a
+                                href={ferramenta.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0 text-muted-foreground hover:text-accent transition-colors"
+                                aria-label={`Abrir ${ferramenta.nome}`}
+                              >
                                 <ExternalLink className="h-4 w-4" />
                               </a>
                             )}
                           </div>
                         </td>
-                        <td className={tdMid}>
-                          <Badge variant="secondary">{ferramenta?.categoria ?? "—"}</Badge>
+                        <td className={tdCompactText}>
+                          <Badge variant="secondary" className="max-w-full truncate text-[11px]">
+                            {ferramenta?.categoria ?? "—"}
+                          </Badge>
                         </td>
-                        <td className={tdMid}>
-                          <Badge variant={ferramenta?.tipo === "Passbolt" ? "warning" : "secondary"}>
+                        <td className={tdCompactText}>
+                          <Badge
+                            variant={ferramenta?.tipo === "Passbolt" ? "warning" : "secondary"}
+                            className="max-w-full truncate text-[11px]"
+                          >
                             {ferramenta?.tipo ?? "—"}
                           </Badge>
                         </td>
-                        <td className={tdMid}><StatusAcessoBadge status={acesso.status} /></td>
-                        <td className={tdMid}>
-                          {acesso.dataConcessao ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
+                        <td className={tdCompactText}>
+                          <StatusAcessoBadge status={acesso.status} />
                         </td>
-                        <td className={tdMid}>{concedidoPorNome}</td>
-                        <td className="sticky right-0 z-10 min-w-[4.5rem] bg-card group-hover:bg-muted/60 px-3 py-6 text-center border-l border-border/60">
+                        <td className={`${tdCompactText} tabular-nums text-xs`}>
+                          {acesso.dataConcessao
+                            ? new Date(acesso.dataConcessao + "T00:00:00").toLocaleDateString("pt-BR")
+                            : "—"}
+                        </td>
+                        <td className={tdCompactText}>
+                          <span className="block truncate">{concedidoPorNome}</span>
+                        </td>
+                        <td className={tdCompactActions}>
                           {isTI && funcionarioAtivo ? (
                             <button
                               type="button"
@@ -457,6 +510,17 @@ export default function FuncionarioDetailPage() {
               </tbody>
             </table>
           </div>
+          {acessos.length > 0 && (
+            <TablePagination
+              totalItems={acessos.length}
+              currentPage={safeAccessPage}
+              pageSize={accessPageSize}
+              onPageChange={setAccessPage}
+              onPageSizeChange={handleAccessPageSizeChange}
+              pageSizeOptions={ACCESS_PAGE_SIZE_OPTIONS}
+              itemLabel="acessos"
+            />
+          )}
         </CardContent>
       </Card>
 
