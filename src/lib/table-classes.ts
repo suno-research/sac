@@ -31,3 +31,18 @@ export const tdCompactCargo =
   "px-2 py-3.5 text-sm leading-snug text-foreground/90 overflow-hidden sm:px-3 sm:py-4";
 export const tdCompactActions =
   "px-2 pr-4 py-3.5 text-sm text-right whitespace-nowrap sm:px-3 sm:pr-5 sm:py-4";
+
+/** Dashboard — cards em grid de 2 colunas (sem scroll horizontal em desktop) */
+export const thDashFirst =
+  "pl-4 pr-2 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap";
+export const thDashMid =
+  "px-2 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap";
+export const thDashLast =
+  "px-2 pr-4 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap";
+
+export const tdDashName =
+  "pl-4 pr-2 py-4 text-sm min-w-0 leading-snug";
+export const tdDashMid =
+  "px-2 py-4 text-sm whitespace-nowrap leading-snug text-muted-foreground";
+export const tdDashLast =
+  "px-2 pr-4 py-4 text-sm leading-snug";

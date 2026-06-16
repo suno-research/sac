@@ -12,6 +12,12 @@ import type {
   Offboarding,
 } from "@/lib/mock-data";
 import {
+  thDashFirst,
+  thDashMid,
+  thDashLast,
+  tdDashName,
+  tdDashMid,
+  tdDashLast,
   thFirst,
   thMid,
   thLast,
@@ -210,6 +216,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <TableCard
             title="Últimas movimentações"
+            contentClassName="overflow-x-auto md:overflow-x-visible"
             action={
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/funcionarios">
@@ -218,13 +225,19 @@ export default function DashboardPage() {
               </Button>
             }
           >
-            <table className="w-full">
+            <table className="w-full min-w-0 table-fixed">
+              <colgroup>
+                <col style={{ width: "42%" }} />
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "18%" }} />
+                <col style={{ width: "18%" }} />
+              </colgroup>
               <thead className="bg-muted/40">
                 <tr>
-                  <th className={thFirst}>Funcionário</th>
-                  <th className={thMid}>Tipo</th>
-                  <th className={thMid}>Data</th>
-                  <th className={thLast}>Status</th>
+                  <th className={thDashFirst} scope="col">Funcionário</th>
+                  <th className={thDashMid} scope="col">Tipo</th>
+                  <th className={thDashMid} scope="col">Data</th>
+                  <th className={thDashLast} scope="col">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -232,21 +245,21 @@ export default function DashboardPage() {
                   const func = getFuncionarioById(mov.funcionarioId);
                   return (
                     <tr key={mov.id} className={trHover}>
-                      <td className={tdName}>
-                        <div className="flex items-center gap-4">
+                      <td className={tdDashName}>
+                        <div className="flex min-w-0 items-center gap-2.5">
                           {func && <Avatar name={func.nome} size="md" />}
-                          <span className="font-medium text-foreground">{func?.nome ?? "—"}</span>
+                          <span className="truncate font-medium text-foreground">{func?.nome ?? "—"}</span>
                         </div>
                       </td>
-                      <td className={tdMid}>
-                        <Badge variant={mov.tipo === "onboarding" ? "success" : "destructive"}>
+                      <td className={tdDashMid}>
+                        <Badge variant={mov.tipo === "onboarding" ? "success" : "destructive"} className="text-[11px]">
                           {mov.tipo === "onboarding" ? "Onboarding" : "Offboarding"}
                         </Badge>
                       </td>
-                      <td className={tdMid}>
+                      <td className={`${tdDashMid} tabular-nums text-xs`}>
                         {new Date(mov.data + "T00:00:00").toLocaleDateString("pt-BR")}
                       </td>
-                      <td className={tdLast}>
+                      <td className={tdDashLast}>
                         <Badge
                           variant={
                             mov.status === "Concluído"
@@ -255,6 +268,7 @@ export default function DashboardPage() {
                                 ? "warning"
                                 : "muted"
                           }
+                          className="text-[11px]"
                         >
                           {mov.status}
                         </Badge>
@@ -268,22 +282,28 @@ export default function DashboardPage() {
 
           <TableCard
             title="Pendências de acesso"
+            contentClassName="overflow-x-auto md:overflow-x-visible"
             action={
               <Badge variant="warning">{pendentesConcessao + pendentesRemocao} itens</Badge>
             }
           >
-            <table className="w-full">
+            <table className="w-full min-w-0 table-fixed">
+              <colgroup>
+                <col style={{ width: "46%" }} />
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "32%" }} />
+              </colgroup>
               <thead className="bg-muted/40">
                 <tr>
-                  <th className={thFirst}>Funcionário</th>
-                  <th className={thMid}>Área</th>
-                  <th className={thLast}>Ação</th>
+                  <th className={thDashFirst} scope="col">Funcionário</th>
+                  <th className={thDashMid} scope="col">Área</th>
+                  <th className={thDashLast} scope="col">Ação</th>
                 </tr>
               </thead>
               <tbody>
                 {pendenciasList.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="pl-10 pr-10 py-14 text-center text-[15px] text-muted-foreground">
+                    <td colSpan={3} className="px-4 py-14 text-center text-sm text-muted-foreground">
                       Nenhuma pendência
                     </td>
                   </tr>
@@ -292,20 +312,22 @@ export default function DashboardPage() {
                     const func = getFuncionarioById(p.funcionarioId);
                     return (
                       <tr key={p.funcionarioId} className={trHover}>
-                        <td className={tdName}>
-                          <div className="flex items-center gap-4">
+                        <td className={tdDashName}>
+                          <div className="flex min-w-0 items-center gap-2.5">
                             {func && <Avatar name={func.nome} size="md" />}
-                            <div className="space-y-1">
-                              <p className="font-medium text-foreground">{func?.nome ?? "—"}</p>
-                              <p className="text-xs text-muted-foreground">{func?.cargo}</p>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-foreground">{func?.nome ?? "—"}</p>
+                              <p className="truncate text-xs text-muted-foreground">{func?.cargo}</p>
                             </div>
                           </div>
                         </td>
-                        <td className={tdMid}>{func?.area}</td>
-                        <td className={tdLast}>
-                          <Button variant="ghost" size="sm" asChild>
+                        <td className={tdDashMid}>
+                          <span className="block truncate">{func?.area}</span>
+                        </td>
+                        <td className={tdDashLast}>
+                          <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs">
                             <Link href={`/funcionarios/${p.funcionarioId}`}>
-                              Ver acessos <ChevronRight className="h-4 w-4" />
+                              Ver acessos <ChevronRight className="h-3.5 w-3.5" />
                             </Link>
                           </Button>
                         </td>

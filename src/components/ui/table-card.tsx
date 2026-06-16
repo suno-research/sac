@@ -5,9 +5,10 @@ type TableCardProps = {
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  contentClassName?: string;
 };
 
-export function TableCard({ title, action, children, className }: TableCardProps) {
+export function TableCard({ title, action, children, className, contentClassName }: TableCardProps) {
   return (
     <div
       className={cn(
@@ -19,7 +20,7 @@ export function TableCard({ title, action, children, className }: TableCardProps
         <h2 className="text-base font-semibold text-foreground tracking-tight">{title}</h2>
         {action}
       </div>
-      <div className="overflow-x-auto px-1 pb-2">{children}</div>
+      <div className={cn("px-1 pb-2", contentClassName ?? "overflow-x-auto")}>{children}</div>
     </div>
   );
 }
