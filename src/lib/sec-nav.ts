@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Settings,
   History,
+  ShieldCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -19,6 +20,7 @@ export type SECNavItem = {
 export const secNavItems: SECNavItem[] = [
   { href: "/sec/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sec/ativos", label: "Ativos", icon: Monitor },
+  { href: "/sec/patrimonio", label: "Patrimônio", icon: ShieldCheck },
   { href: "/sec/estoque", label: "Estoque", icon: Package },
   { href: "/sec/alocacoes", label: "Alocações", icon: ClipboardList },
   { href: "/sec/termos", label: "Termos", icon: FileText },

@@ -14,7 +14,7 @@ import {
   Package,
   Server,
   Smartphone,
-  Tablet,
+  ShieldCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PageMotion } from "@/components/ui/page-motion";
@@ -39,7 +39,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-import type { Ativo, StatusEquipamento, TipoEquipamento } from "@/types/sec";
+import type { Ativo, StatusEquipamento, TipoEquipamento, Patrimonio } from "@/types/sec";
 import {
   tipoLabel,
   statusLabel,
@@ -47,6 +47,10 @@ import {
   TODOS_TIPOS,
   TODOS_STATUS,
 } from "@/lib/sec-ativos";
+import {
+  statusPatrimonioLabel,
+  statusPatrimonioVariant,
+} from "@/lib/sec-patrimonio";
 
 const TIPO_ICONS: Record<TipoEquipamento, LucideIcon> = {
   notebook: Laptop,
@@ -108,6 +112,8 @@ export default function AtivoDetailPage() {
 
   const [ativo, setAtivo] = useState<Ativo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [patrimonios, setPatrimonios] = useState<Patrimonio[]>([]);
+  const [loadingPatrimonio, setLoadingPatrimonio] = useState(true);
 
   const [modalEditar, setModalEditar] = useState(false);
   const [modalDescartar, setModalDescartar] = useState(false);
@@ -146,6 +152,24 @@ export default function AtivoDetailPage() {
           setAtivo(null);
           setLoading(false);
         }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/sec/patrimonio/equipamento/${id}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (!cancelled) {
+          setPatrimonios(Array.isArray(data) ? data : []);
+          setLoadingPatrimonio(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoadingPatrimonio(false);
       });
     return () => {
       cancelled = true;
@@ -379,6 +403,67 @@ export default function AtivoDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Patrimônio</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingPatrimonio ? (
+              <div className="h-10 rounded-lg bg-muted/60 animate-pulse" />
+            ) : (() => {
+              const registroAtivo = patrimonios.find((p) => p.status !== "baixado");
+              if (!registroAtivo) {
+                return (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <p className="text-sm text-muted-foreground">
+                      Nenhum registro patrimonial.
+                    </p>
+                    {isTI && (
+                      <Button variant="outline" size="sm" asChild className="gap-1.5 shrink-0">
+                        <Link href={`/sec/patrimonio/novo?equipamento_id=${id}`}>
+                          <ShieldCheck className="h-4 w-4" />
+                          Tombar ativo
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="font-medium text-foreground">
+                      {registroAtivo.numero_patrimonio}
+                    </span>
+                    <Badge variant={statusPatrimonioVariant(registroAtivo.status)}>
+                      {statusPatrimonioLabel(registroAtivo.status)}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                    <span>
+                      Tombamento:{" "}
+                      {registroAtivo.data_tombamento
+                        ? new Date(registroAtivo.data_tombamento + "T00:00:00").toLocaleDateString("pt-BR")
+                        : "—"}
+                    </span>
+                    <span>
+                      Valor:{" "}
+                      {registroAtivo.valor_tombamento
+                        ? `R$ ${parseFloat(registroAtivo.valor_tombamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                        : "—"}
+                    </span>
+                  </div>
+                  <Button variant="link" size="sm" asChild className="h-auto p-0 text-blue-500 dark:text-blue-400">
+                    <Link href={`/sec/patrimonio/${registroAtivo.patrimonio_id}`}>
+                      Ver registro
+                    </Link>
+                  </Button>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
