@@ -192,6 +192,7 @@ function transformarComputador(row, log) {
     marca:            fabricante || "Desconhecido",
     modelo:           modelo || tipoRaw,
     numero_serie:     sn,
+    empresa_proprietaria: clean(row[1]),
     status:           "ativo",
     localizacao_atual: "",
     observacoes:      partsObs.join(" | "),
@@ -262,6 +263,7 @@ function transformarCelular(row, secao, log) {
     marca:             fab,
     modelo,
     numero_serie:      msn,
+    empresa_proprietaria: clean(row[1]),
     status:            "ativo",
     localizacao_atual: "",
     observacoes:       partsObs.join(" | "),
@@ -271,7 +273,7 @@ function transformarCelular(row, secao, log) {
 
 // ─── Converter Ativo → linha para EQUIPAMENTOS ────────────────────────────────
 /**
- * Ordem das colunas na aba EQUIPAMENTOS (A–U):
+ * Ordem das colunas na aba EQUIPAMENTOS (A–V):
  * 0:  equipamento_id
  * 1:  nome
  * 2:  tipo
@@ -279,20 +281,21 @@ function transformarCelular(row, secao, log) {
  * 4:  modelo
  * 5:  numero_serie
  * 6:  numero_patrimonio
- * 7:  status
- * 8:  localizacao_atual
- * 9:  data_aquisicao
- * 10: valor_aquisicao
- * 11: fornecedor
- * 12: nota_fiscal
- * 13: garantia_ate
- * 14: observacoes
- * 15: created_at
- * 16: created_by
- * 17: updated_at
- * 18: updated_by
- * 19: deleted_at
- * 20: deleted_by
+ * 7:  empresa_proprietaria
+ * 8:  status
+ * 9:  localizacao_atual
+ * 10: data_aquisicao
+ * 11: valor_aquisicao
+ * 12: fornecedor
+ * 13: nota_fiscal
+ * 14: garantia_ate
+ * 15: observacoes
+ * 16: created_at
+ * 17: created_by
+ * 18: updated_at
+ * 19: updated_by
+ * 20: deleted_at
+ * 21: deleted_by
  */
 function ativoToRow(ativo) {
   return [
@@ -302,7 +305,8 @@ function ativoToRow(ativo) {
     ativo.marca,
     ativo.modelo,
     ativo.numero_serie,
-    "",                    // numero_patrimonio
+    "",                              // numero_patrimonio
+    ativo.empresa_proprietaria || "",
     ativo.status,
     ativo.localizacao_atual,
     "",                    // data_aquisicao
@@ -325,7 +329,7 @@ async function appendLote(sheets, sheetId, aba, rows) {
   if (rows.length === 0) return;
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: `${aba}!A:U`,
+    range: `${aba}!A:V`,
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: rows },
@@ -459,11 +463,13 @@ async function main() {
     "",
     "",
     JSON.stringify({
-      nome:         ativo.nome,
-      tipo:         ativo.tipo,
-      marca:        ativo.marca,
-      numero_serie: ativo.numero_serie,
-      status:       ativo.status,
+      nome:                 ativo.nome,
+      tipo:                 ativo.tipo,
+      marca:                ativo.marca,
+      numero_serie:         ativo.numero_serie,
+      empresa_proprietaria: ativo.empresa_proprietaria || "",
+      responsavel_nome:     ativo._responsavel_nome || "",
+      status:               ativo.status,
     }),
     IMPORT_USER,
     "Sistema",
