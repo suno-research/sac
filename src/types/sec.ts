@@ -22,6 +22,8 @@ export interface Ativo {
   modelo: string;
   numero_serie?: string;
   numero_patrimonio?: string;
+  /** Empresa proprietária: Suno, Plugify, Asset, Pessoal */
+  empresa_proprietaria?: string;
   status: StatusEquipamento;
   localizacao_atual?: string;
   data_aquisicao?: string;

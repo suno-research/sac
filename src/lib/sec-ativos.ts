@@ -50,24 +50,25 @@ export function rowToAtivo(row: string[]): Ativo {
     tipo: parseTipo(row[2] || ""),
     marca: row[3] || "",
     modelo: row[4] || "",
-    status: parseStatus(row[7] || "ativo"),
-    created_at: row[15] || "",
-    created_by: row[16] || "",
-    updated_at: row[17] || "",
-    updated_by: row[18] || "",
+    status: parseStatus(row[8] || "ativo"),
+    created_at: row[16] || "",
+    created_by: row[17] || "",
+    updated_at: row[18] || "",
+    updated_by: row[19] || "",
   };
 
   if (row[5]) ativo.numero_serie = row[5];
   if (row[6]) ativo.numero_patrimonio = row[6];
-  if (row[8]) ativo.localizacao_atual = row[8];
-  if (row[9]) ativo.data_aquisicao = row[9];
-  if (row[10]) ativo.valor_aquisicao = row[10];
-  if (row[11]) ativo.fornecedor = row[11];
-  if (row[12]) ativo.nota_fiscal = row[12];
-  if (row[13]) ativo.garantia_ate = row[13];
-  if (row[14]) ativo.observacoes = row[14];
-  if (row[19]) ativo.deleted_at = row[19];
-  if (row[20]) ativo.deleted_by = row[20];
+  if (row[7]) ativo.empresa_proprietaria = row[7];
+  if (row[9]) ativo.localizacao_atual = row[9];
+  if (row[10]) ativo.data_aquisicao = row[10];
+  if (row[11]) ativo.valor_aquisicao = row[11];
+  if (row[12]) ativo.fornecedor = row[12];
+  if (row[13]) ativo.nota_fiscal = row[13];
+  if (row[14]) ativo.garantia_ate = row[14];
+  if (row[15]) ativo.observacoes = row[15];
+  if (row[20]) ativo.deleted_at = row[20];
+  if (row[21]) ativo.deleted_by = row[21];
 
   return ativo;
 }
@@ -81,6 +82,7 @@ export function ativoToRow(ativo: Ativo): string[] {
     ativo.modelo,
     ativo.numero_serie ?? "",
     ativo.numero_patrimonio ?? "",
+    ativo.empresa_proprietaria ?? "",
     ativo.status,
     ativo.localizacao_atual ?? "",
     ativo.data_aquisicao ?? "",
