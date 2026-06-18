@@ -4,13 +4,15 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 
+const FULLSCREEN_ROUTES = ["/login", "/portal"];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLogin = pathname === "/login";
+  const isFullscreen = FULLSCREEN_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
+  );
 
-  if (isLogin) {
-    return <>{children}</>;
-  }
+  if (isFullscreen) return <>{children}</>;
 
   return (
     <>

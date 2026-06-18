@@ -5,8 +5,8 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "SAC — Suno Access Control",
-  description: "Sistema interno de gestão de acessos da Suno",
+  title: "Suno Operations Platform",
+  description: "Plataforma interna de operações da Suno — SAC e SEC",
   icons: { icon: "/favicon.ico" },
 };
 
