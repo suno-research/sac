@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -21,36 +21,22 @@ import { useToast } from "@/components/ui/toast";
 import type { Ativo, CreateEstoquePayload, UnidadeEstoque } from "@/types/sec";
 import { unidadeLabel, TODAS_UNIDADES } from "@/lib/sec-estoque";
 
-type FormErrors = Partial<Record<keyof CreateEstoquePayload, string>>;
+type FormErrors = Partial<
+  Record<keyof CreateEstoquePayload | "quantidade", string>
+>;
 
 export default function NovoEstoquePage() {
-  return (
-    <Suspense
-      fallback={
-        <PageMotion>
-          <div className="h-40 rounded-xl bg-muted/60 animate-pulse" />
-        </PageMotion>
-      }
-    >
-      <NovoEstoqueForm />
-    </Suspense>
-  );
-}
-
-function NovoEstoqueForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const isTI = session?.user?.role === "ti";
-  const equipamentoPre = searchParams.get("equipamento_id") ?? "";
 
   const [ativos, setAtivos] = useState<Ativo[]>([]);
   const [loadingAtivos, setLoadingAtivos] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const [equipamentoId, setEquipamentoId] = useState(equipamentoPre);
+  const [equipamentoId, setEquipamentoId] = useState("");
   const [descricao, setDescricao] = useState("");
   const [quantidadeTotal, setQuantidadeTotal] = useState("");
   const [quantidadeDisponivel, setQuantidadeDisponivel] = useState("");
@@ -78,33 +64,29 @@ function NovoEstoqueForm() {
     const next: FormErrors = {};
     if (!equipamentoId) next.equipamento_id = "Selecione um equipamento";
     if (!descricao.trim()) next.descricao = "Descrição é obrigatória";
-    if (!unidade) next.unidade = "Unidade é obrigatória";
+    if (!quantidadeTotal && quantidadeTotal !== "0") {
+      next.quantidade_total = "Quantidade total é obrigatória";
+    }
+    if (!quantidadeDisponivel && quantidadeDisponivel !== "0") {
+      next.quantidade_disponivel = "Quantidade disponível é obrigatória";
+    }
 
     const total = parseInt(quantidadeTotal, 10);
     const disponivel = parseInt(quantidadeDisponivel, 10);
 
-    if (quantidadeTotal === "" || isNaN(total) || total < 0) {
-      next.quantidade_total = "Quantidade total inválida";
+    if (!Number.isNaN(total) && total < 0) {
+      next.quantidade_total = "Quantidade não pode ser negativa";
     }
-    if (quantidadeDisponivel === "" || isNaN(disponivel) || disponivel < 0) {
-      next.quantidade_disponivel = "Quantidade disponível inválida";
+    if (!Number.isNaN(disponivel) && disponivel < 0) {
+      next.quantidade_disponivel = "Quantidade não pode ser negativa";
     }
     if (
-      !isNaN(total) &&
-      !isNaN(disponivel) &&
-      total >= 0 &&
-      disponivel >= 0 &&
+      !Number.isNaN(total) &&
+      !Number.isNaN(disponivel) &&
       disponivel > total
     ) {
-      next.quantidade_disponivel =
-        "Disponível não pode ser maior que o total";
-    }
-
-    if (estoqueMinimo !== "") {
-      const min = parseInt(estoqueMinimo, 10);
-      if (isNaN(min) || min < 0) {
-        next.estoque_minimo = "Estoque mínimo inválido";
-      }
+      next.quantidade =
+        "Quantidade disponível não pode ser maior que o total.";
     }
 
     setErrors(next);
@@ -125,9 +107,7 @@ function NovoEstoqueForm() {
       };
 
       if (localizacao.trim()) payload.localizacao = localizacao.trim();
-      if (estoqueMinimo !== "") {
-        payload.estoque_minimo = parseInt(estoqueMinimo, 10);
-      }
+      if (estoqueMinimo) payload.estoque_minimo = parseInt(estoqueMinimo, 10);
       if (observacoes.trim()) payload.observacoes = observacoes.trim();
 
       const res = await fetch("/api/sec/estoque", {
@@ -176,103 +156,116 @@ function NovoEstoqueForm() {
 
       <PageHeader
         title="Novo item"
-        description="Cadastre um item de estoque vinculado a um equipamento."
+        description="Cadastre um item fungível no estoque."
       />
 
       <div className="max-w-2xl">
         <div className="rounded-xl border border-border bg-card p-6 sm:p-8 space-y-6">
-          {loadingAtivos ? (
-            <div className="h-11 rounded-xl bg-muted/60 animate-pulse" />
-          ) : ativos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum ativo cadastrado.{" "}
-              <Link
-                href="/sec/ativos/novo"
-                className="text-blue-500 dark:text-blue-400 underline"
-              >
-                Cadastre um ativo primeiro.
-              </Link>
-            </p>
-          ) : (
-            <div>
-              <label className="text-sm font-medium">
-                Equipamento <span className="text-destructive">*</span>
-              </label>
-              <Select value={equipamentoId} onValueChange={setEquipamentoId}>
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="Selecione o equipamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ativos.map((a) => (
-                    <SelectItem
-                      key={a.equipamento_id}
-                      value={a.equipamento_id}
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">
+              Identificação
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Equipamento <span className="text-destructive">*</span>
+                </label>
+                {loadingAtivos ? (
+                  <div className="mt-1.5 h-10 rounded-md bg-muted/60 animate-pulse" />
+                ) : ativos.length === 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Nenhum ativo cadastrado.{" "}
+                    <Link
+                      href="/sec/ativos/novo"
+                      className="text-blue-500 hover:underline dark:text-blue-400"
                     >
-                      {a.nome} — {a.modelo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.equipamento_id && (
-                <p className="mt-1 text-xs text-destructive">
-                  {errors.equipamento_id}
-                </p>
-              )}
+                      Cadastre um ativo primeiro.
+                    </Link>
+                  </p>
+                ) : (
+                  <Select value={equipamentoId} onValueChange={setEquipamentoId}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Selecione o equipamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ativos.map((a) => (
+                        <SelectItem key={a.equipamento_id} value={a.equipamento_id}>
+                          {a.nome} — {a.modelo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {errors.equipamento_id && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {errors.equipamento_id}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Descrição <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  className="mt-1.5"
+                  placeholder="Ex: Mouse sem fio Dell"
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                />
+                {errors.descricao && (
+                  <p className="mt-1 text-xs text-destructive">{errors.descricao}</p>
+                )}
+              </div>
             </div>
-          )}
+          </section>
 
-          <div>
-            <label className="text-sm font-medium">
-              Descrição <span className="text-destructive">*</span>
-            </label>
-            <Input
-              className="mt-1.5"
-              placeholder="Ex: Cabo HDMI 2m"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-            />
-            {errors.descricao && (
-              <p className="mt-1 text-xs text-destructive">{errors.descricao}</p>
+          <hr className="border-border" />
+
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Quantidades</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Quantidade total <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="mt-1.5"
+                  value={quantidadeTotal}
+                  onChange={(e) => setQuantidadeTotal(e.target.value)}
+                />
+                {errors.quantidade_total && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {errors.quantidade_total}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Quantidade disponível <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="mt-1.5"
+                  value={quantidadeDisponivel}
+                  onChange={(e) => setQuantidadeDisponivel(e.target.value)}
+                />
+                {errors.quantidade_disponivel && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {errors.quantidade_disponivel}
+                  </p>
+                )}
+              </div>
+            </div>
+            {errors.quantidade && (
+              <p className="text-xs text-destructive">{errors.quantidade}</p>
             )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="text-sm font-medium">
-                Qtd. total <span className="text-destructive">*</span>
-              </label>
-              <Input
-                type="number"
-                min={0}
-                className="mt-1.5"
-                value={quantidadeTotal}
-                onChange={(e) => setQuantidadeTotal(e.target.value)}
-              />
-              {errors.quantidade_total && (
-                <p className="mt-1 text-xs text-destructive">
-                  {errors.quantidade_total}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-medium">
-                Qtd. disponível <span className="text-destructive">*</span>
-              </label>
-              <Input
-                type="number"
-                min={0}
-                className="mt-1.5"
-                value={quantidadeDisponivel}
-                onChange={(e) => setQuantidadeDisponivel(e.target.value)}
-              />
-              {errors.quantidade_disponivel && (
-                <p className="mt-1 text-xs text-destructive">
-                  {errors.quantidade_disponivel}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-medium">
+              <label className="text-sm font-medium text-foreground">
                 Unidade <span className="text-destructive">*</span>
               </label>
               <Select
@@ -291,44 +284,52 @@ function NovoEstoqueForm() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </section>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium">Localização</label>
-              <Input
-                className="mt-1.5"
-                placeholder="Ex: Almoxarifado TI — Prateleira A3"
-                value={localizacao}
-                onChange={(e) => setLocalizacao(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Estoque mínimo</label>
-              <Input
-                type="number"
-                min={0}
-                className="mt-1.5"
-                value={estoqueMinimo}
-                onChange={(e) => setEstoqueMinimo(e.target.value)}
-              />
-              {errors.estoque_minimo && (
-                <p className="mt-1 text-xs text-destructive">
-                  {errors.estoque_minimo}
-                </p>
-              )}
-            </div>
-          </div>
+          <hr className="border-border" />
 
-          <div>
-            <label className="text-sm font-medium">Observações</label>
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Localização</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Localização
+                </label>
+                <Input
+                  className="mt-1.5"
+                  placeholder="Ex: Almoxarifado TI — Prateleira A3"
+                  value={localizacao}
+                  onChange={(e) => setLocalizacao(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Estoque mínimo
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="mt-1.5"
+                  placeholder="Alerta quando atingir este valor"
+                  value={estoqueMinimo}
+                  onChange={(e) => setEstoqueMinimo(e.target.value)}
+                />
+              </div>
+            </div>
+          </section>
+
+          <hr className="border-border" />
+
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Observações</h2>
             <Textarea
               rows={3}
-              className="mt-1.5"
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
+              placeholder="Informações adicionais sobre o item..."
             />
-          </div>
+          </section>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

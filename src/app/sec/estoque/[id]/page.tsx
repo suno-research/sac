@@ -14,6 +14,7 @@ import {
 import { PageMotion } from "@/components/ui/page-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -33,12 +34,14 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import type { Ativo, ItemEstoque, UnidadeEstoque } from "@/types/sec";
-import {
-  isEstoqueCritico,
-  unidadeLabel,
-  TODAS_UNIDADES,
-} from "@/lib/sec-estoque";
+import { isEstoqueCritico, unidadeLabel, TODAS_UNIDADES } from "@/lib/sec-estoque";
 import { cn } from "@/lib/utils";
+
+function qtyColorClass(item: ItemEstoque): string {
+  if (item.quantidade_disponivel === 0) return "text-destructive";
+  if (isEstoqueCritico(item)) return "text-warning";
+  return "text-foreground";
+}
 
 function DetailSkeleton() {
   return (
@@ -62,18 +65,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function qtyCardClass(item: ItemEstoque, type: "total" | "disponivel" | "alocada"): string {
-  if (type === "disponivel") {
-    if (item.quantidade_disponivel === 0) return "text-destructive";
-    if (isEstoqueCritico(item)) return "text-warning";
-    return "text-emerald-600 dark:text-emerald-400";
-  }
-  if (type === "alocada" && item.quantidade_alocada > 0) {
-    return "text-blue-600 dark:text-blue-400";
-  }
-  return "text-foreground";
-}
-
 export default function EstoqueDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -84,7 +75,7 @@ export default function EstoqueDetailPage() {
   const id = params.id as string;
 
   const [item, setItem] = useState<ItemEstoque | null>(null);
-  const [ativo, setAtivo] = useState<Ativo | null>(null);
+  const [nomeEquipamento, setNomeEquipamento] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [modalEditar, setModalEditar] = useState(false);
@@ -100,10 +91,7 @@ export default function EstoqueDetailPage() {
 
   const [quantidadeTotal, setQuantidadeTotal] = useState("");
   const [quantidadeDisponivel, setQuantidadeDisponivel] = useState("");
-  const [qtyErrors, setQtyErrors] = useState<{
-    quantidade_total?: string;
-    quantidade_disponivel?: string;
-  }>({});
+  const [erroQuantidade, setErroQuantidade] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -112,12 +100,11 @@ export default function EstoqueDetailPage() {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then(async (data: ItemEstoque) => {
-        if (cancelled) return;
-        setItem(data);
-        const ativoRes = await fetch(`/api/sec/ativos/${data.equipamento_id}`);
-        if (ativoRes.ok) setAtivo(await ativoRes.json());
-        setLoading(false);
+      .then((data: ItemEstoque) => {
+        if (!cancelled) {
+          setItem(data);
+          setLoading(false);
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -129,6 +116,20 @@ export default function EstoqueDetailPage() {
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!item) return;
+    let cancelled = false;
+    fetch(`/api/sec/ativos/${item.equipamento_id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((ativo: Ativo | null) => {
+        if (!cancelled && ativo) setNomeEquipamento(ativo.nome);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [item]);
 
   useEffect(() => {
     if (searchParams.get("edit") === "true" && item && isTI) {
@@ -154,8 +155,30 @@ export default function EstoqueDetailPage() {
     if (!item) return;
     setQuantidadeTotal(String(item.quantidade_total));
     setQuantidadeDisponivel(String(item.quantidade_disponivel));
-    setQtyErrors({});
+    setErroQuantidade("");
     setModalAjustar(true);
+  }
+
+  function validarQuantidades(): boolean {
+    const total = parseInt(quantidadeTotal, 10);
+    const disponivel = parseInt(quantidadeDisponivel, 10);
+
+    if (Number.isNaN(total) || Number.isNaN(disponivel)) {
+      setErroQuantidade("Informe quantidades válidas.");
+      return false;
+    }
+    if (total < 0 || disponivel < 0) {
+      setErroQuantidade("Quantidades não podem ser negativas.");
+      return false;
+    }
+    if (disponivel > total) {
+      setErroQuantidade(
+        "Quantidade disponível não pode ser maior que o total."
+      );
+      return false;
+    }
+    setErroQuantidade("");
+    return true;
   }
 
   async function salvarEdicao() {
@@ -167,13 +190,13 @@ export default function EstoqueDetailPage() {
 
     setSalvando(true);
     try {
-      const body: Record<string, string | number | undefined> = {
+      const body: Record<string, string | number> = {
         descricao: descricao.trim(),
         unidade,
         localizacao: localizacao.trim(),
         observacoes: observacoes.trim(),
       };
-      if (estoqueMinimo !== "") {
+      if (estoqueMinimo) {
         body.estoque_minimo = parseInt(estoqueMinimo, 10);
       }
 
@@ -183,46 +206,27 @@ export default function EstoqueDetailPage() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Erro");
+      }
 
-      setItem(await res.json());
+      const updated = await res.json();
+      setItem(updated);
       setModalEditar(false);
       toast("Item atualizado com sucesso.");
-    } catch {
-      toast("Erro ao atualizar item.", "error");
+    } catch (e) {
+      toast(
+        e instanceof Error ? e.message : "Erro ao atualizar item.",
+        "error"
+      );
     } finally {
       setSalvando(false);
     }
   }
 
-  function validateQty(): boolean {
-    const next: typeof qtyErrors = {};
-    const total = parseInt(quantidadeTotal, 10);
-    const disponivel = parseInt(quantidadeDisponivel, 10);
-
-    if (quantidadeTotal === "" || isNaN(total) || total < 0) {
-      next.quantidade_total = "Quantidade total inválida";
-    }
-    if (quantidadeDisponivel === "" || isNaN(disponivel) || disponivel < 0) {
-      next.quantidade_disponivel = "Quantidade disponível inválida";
-    }
-    if (
-      !isNaN(total) &&
-      !isNaN(disponivel) &&
-      total >= 0 &&
-      disponivel >= 0 &&
-      disponivel > total
-    ) {
-      next.quantidade_disponivel =
-        "Disponível não pode ser maior que o total";
-    }
-
-    setQtyErrors(next);
-    return Object.keys(next).length === 0;
-  }
-
   async function salvarAjuste() {
-    if (!item || !validateQty()) return;
+    if (!item || !validarQuantidades()) return;
 
     setAjustando(true);
     try {
@@ -240,12 +244,13 @@ export default function EstoqueDetailPage() {
         throw new Error(err.error || "Erro");
       }
 
-      setItem(await res.json());
+      const updated = await res.json();
+      setItem(updated);
       setModalAjustar(false);
-      toast("Quantidades ajustadas com sucesso.");
+      toast("Quantidade ajustada com sucesso.");
     } catch (e) {
       toast(
-        e instanceof Error ? e.message : "Erro ao ajustar quantidades.",
+        e instanceof Error ? e.message : "Erro ao ajustar quantidade.",
         "error"
       );
     } finally {
@@ -273,6 +278,9 @@ export default function EstoqueDetailPage() {
       </PageMotion>
     );
   }
+
+  const zerado = item.quantidade_disponivel === 0;
+  const critico = isEstoqueCritico(item) && !zerado;
 
   return (
     <PageMotion>
@@ -304,13 +312,14 @@ export default function EstoqueDetailPage() {
                     {unidadeLabel(item.unidade)}
                     {item.localizacao ? ` · ${item.localizacao}` : ""}
                   </p>
-                  {isEstoqueCritico(item) && (
-                    <p className="mt-2 text-sm font-medium text-warning">
-                      {item.quantidade_disponivel === 0
-                        ? "Estoque zerado"
-                        : "Estoque em nível crítico"}
-                    </p>
-                  )}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {zerado && (
+                      <Badge variant="destructive">Zerado</Badge>
+                    )}
+                    {critico && (
+                      <Badge variant="warning">Estoque crítico</Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               {isTI && (
@@ -324,12 +333,11 @@ export default function EstoqueDetailPage() {
                     <Pencil className="h-4 w-4" /> Editar
                   </Button>
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={abrirModalAjustar}
-                    className="gap-1.5 border-blue-500/30 text-blue-600 hover:bg-blue-50 dark:border-blue-400/30 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                    className="gap-1.5 bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-400 dark:text-foreground dark:hover:bg-blue-500"
                   >
-                    <SlidersHorizontal className="h-4 w-4" /> Ajustar quantidades
+                    <SlidersHorizontal className="h-4 w-4" /> Ajustar quantidade
                   </Button>
                 </div>
               )}
@@ -339,33 +347,14 @@ export default function EstoqueDetailPage() {
 
         <div className="grid gap-6 md:grid-cols-3">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Disponível</CardTitle>
             </CardHeader>
             <CardContent>
               <p
                 className={cn(
-                  "text-4xl font-semibold tabular-nums",
-                  qtyCardClass(item, "total")
-                )}
-              >
-                {item.quantidade_total}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Disponível
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p
-                className={cn(
-                  "text-4xl font-semibold tabular-nums",
-                  qtyCardClass(item, "disponivel")
+                  "text-4xl font-semibold tabular-nums tracking-tight",
+                  qtyColorClass(item)
                 )}
               >
                 {item.quantidade_disponivel}
@@ -373,18 +362,21 @@ export default function EstoqueDetailPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Alocado
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <p
-                className={cn(
-                  "text-4xl font-semibold tabular-nums",
-                  qtyCardClass(item, "alocada")
-                )}
-              >
+              <p className="text-4xl font-semibold tabular-nums tracking-tight text-foreground">
+                {item.quantidade_total}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Alocado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-semibold tabular-nums tracking-tight text-foreground">
                 {item.quantidade_alocada}
               </p>
             </CardContent>
@@ -394,36 +386,23 @@ export default function EstoqueDetailPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Equipamento</CardTitle>
+              <CardTitle>Detalhes</CardTitle>
             </CardHeader>
             <CardContent>
-              <InfoRow label="ID" value={item.equipamento_id} />
               <InfoRow
-                label="Nome"
-                value={
-                  ativo ? (
-                    ativo.nome
-                  ) : "—"
-                }
+                label="Equipamento"
+                value={nomeEquipamento ?? item.equipamento_id}
               />
-              {ativo && (
-                <div className="pt-2">
-                  <Link
-                    href={`/sec/ativos/${ativo.equipamento_id}`}
-                    className="text-sm text-blue-500 dark:text-blue-400 underline"
-                  >
-                    Ver ativo
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuração</CardTitle>
-            </CardHeader>
-            <CardContent>
+              <div className="py-2.5 border-b border-border/40">
+                <Link
+                  href={`/sec/ativos/${item.equipamento_id}`}
+                  className="text-sm font-medium text-blue-500 hover:underline dark:text-blue-400"
+                >
+                  Ver ativo
+                </Link>
+              </div>
               <InfoRow label="Unidade" value={unidadeLabel(item.unidade)} />
+              <InfoRow label="Localização" value={item.localizacao || "—"} />
               <InfoRow
                 label="Estoque mínimo"
                 value={
@@ -432,33 +411,45 @@ export default function EstoqueDetailPage() {
                     : "—"
                 }
               />
-              <InfoRow label="Localização" value={item.localizacao || "—"} />
             </CardContent>
           </Card>
+
+          {item.observacoes && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Observações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                  {item.observacoes}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        {item.observacoes && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Observações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                {item.observacoes}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Histórico de movimentações disponível na Sprint 3
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog open={modalEditar} onOpenChange={setModalEditar}>
-        <DialogContent className="max-w-[480px]">
+        <DialogContent className="max-w-[520px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar item</DialogTitle>
           </DialogHeader>
           <DialogBody className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Descrição</label>
+              <label className="text-sm font-medium text-foreground">
+                Descrição
+              </label>
               <Input
                 className="mt-1.5"
                 value={descricao}
@@ -466,7 +457,9 @@ export default function EstoqueDetailPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Unidade</label>
+              <label className="text-sm font-medium text-foreground">
+                Unidade
+              </label>
               <Select
                 value={unidade}
                 onValueChange={(v) => setUnidade(v as UnidadeEstoque)}
@@ -484,7 +477,9 @@ export default function EstoqueDetailPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Localização</label>
+              <label className="text-sm font-medium text-foreground">
+                Localização
+              </label>
               <Input
                 className="mt-1.5"
                 value={localizacao}
@@ -492,17 +487,22 @@ export default function EstoqueDetailPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Estoque mínimo</label>
+              <label className="text-sm font-medium text-foreground">
+                Estoque mínimo
+              </label>
               <Input
                 type="number"
                 min={0}
+                step={1}
                 className="mt-1.5"
                 value={estoqueMinimo}
                 onChange={(e) => setEstoqueMinimo(e.target.value)}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Observações</label>
+              <label className="text-sm font-medium text-foreground">
+                Observações
+              </label>
               <Textarea
                 rows={3}
                 className="mt-1.5"
@@ -533,46 +533,43 @@ export default function EstoqueDetailPage() {
       <Dialog open={modalAjustar} onOpenChange={setModalAjustar}>
         <DialogContent className="max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>Ajustar quantidades</DialogTitle>
+            <DialogTitle>Ajustar quantidade</DialogTitle>
           </DialogHeader>
           <DialogBody className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Atualize as quantidades de{" "}
-              <strong className="text-foreground">{item.descricao}</strong>.
-              A quantidade alocada será recalculada automaticamente.
+              Ajuste rápido de quantidade
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Qtd. total</label>
+                <label className="text-sm font-medium text-foreground">
+                  Quantidade total
+                </label>
                 <Input
                   type="number"
                   min={0}
+                  step={1}
                   className="mt-1.5"
                   value={quantidadeTotal}
                   onChange={(e) => setQuantidadeTotal(e.target.value)}
                 />
-                {qtyErrors.quantidade_total && (
-                  <p className="mt-1 text-xs text-destructive">
-                    {qtyErrors.quantidade_total}
-                  </p>
-                )}
               </div>
               <div>
-                <label className="text-sm font-medium">Qtd. disponível</label>
+                <label className="text-sm font-medium text-foreground">
+                  Quantidade disponível
+                </label>
                 <Input
                   type="number"
                   min={0}
+                  step={1}
                   className="mt-1.5"
                   value={quantidadeDisponivel}
                   onChange={(e) => setQuantidadeDisponivel(e.target.value)}
                 />
-                {qtyErrors.quantidade_disponivel && (
-                  <p className="mt-1 text-xs text-destructive">
-                    {qtyErrors.quantidade_disponivel}
-                  </p>
-                )}
               </div>
             </div>
+            {erroQuantidade && (
+              <p className="text-xs text-destructive">{erroQuantidade}</p>
+            )}
           </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalAjustar(false)}>
@@ -586,7 +583,7 @@ export default function EstoqueDetailPage() {
               {ajustando ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Confirmar ajuste"
+                "Salvar ajuste"
               )}
             </Button>
           </DialogFooter>

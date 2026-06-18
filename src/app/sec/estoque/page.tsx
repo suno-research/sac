@@ -8,12 +8,15 @@ import {
   ChevronRight,
   Package,
   SearchX,
-  Plus,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
   Pencil,
+  Plus,
   AlertTriangle,
-  Ban,
+  PackageX,
 } from "lucide-react";
-import type { Ativo, ItemEstoque } from "@/types/sec";
+import type { Ativo, ItemEstoque, UnidadeEstoque } from "@/types/sec";
 import {
   isEstoqueCritico,
   unidadeLabel,
@@ -35,12 +38,59 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { PageMotion } from "@/components/ui/page-motion";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE_OPTIONS = [10, 50, 100];
 
 type DisponibilidadeFiltro = "todos" | "disponivel" | "critico" | "zerado";
+type SortKey = "descricao" | "equipamento" | "disponivel" | "alocado" | "unidade";
+
+function isDisponivelNormal(item: ItemEstoque): boolean {
+  if (item.quantidade_disponivel === 0) return false;
+  if (item.estoque_minimo !== undefined) {
+    return item.quantidade_disponivel > item.estoque_minimo;
+  }
+  return item.quantidade_disponivel > 0;
+}
+
+function qtyColorClass(item: ItemEstoque): string {
+  if (item.quantidade_disponivel === 0) return "text-destructive font-semibold";
+  if (isEstoqueCritico(item)) return "text-warning font-semibold";
+  return "text-foreground";
+}
+
+function SortableHeader({
+  label,
+  sortKey,
+  activeKey,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeKey: SortKey;
+  sortDir: "asc" | "desc";
+  onSort: (key: SortKey) => void;
+}) {
+  const active = activeKey === sortKey;
+  const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(sortKey)}
+      className={cn(
+        "inline-flex items-center gap-1 transition-colors hover:text-foreground",
+        active && "text-foreground"
+      )}
+      aria-label={`Ordenar por ${label}`}
+    >
+      {label}
+      <Icon className="h-3.5 w-3.5 opacity-60" aria-hidden />
+    </button>
+  );
+}
 
 function TableSkeleton() {
   return (
@@ -52,27 +102,9 @@ function TableSkeleton() {
   );
 }
 
-function matchDisponibilidade(
-  item: ItemEstoque,
-  filtro: DisponibilidadeFiltro
-): boolean {
-  if (filtro === "todos") return true;
-  if (filtro === "zerado") return item.quantidade_disponivel === 0;
-  if (filtro === "critico")
-    return isEstoqueCritico(item) && item.quantidade_disponivel > 0;
-  if (filtro === "disponivel")
-    return item.quantidade_disponivel > 0 && !isEstoqueCritico(item);
-  return true;
-}
-
-function qtyColorClass(item: ItemEstoque): string {
-  if (item.quantidade_disponivel === 0) return "text-destructive font-semibold";
-  if (isEstoqueCritico(item)) return "text-warning font-semibold";
-  return "text-emerald-600 dark:text-emerald-400 font-medium";
-}
-
 export default function EstoquePage() {
   const { data: session } = useSession();
+  const { toast } = useToast();
   const isTI = session?.user?.role === "ti";
   const router = useRouter();
 
@@ -81,9 +113,12 @@ export default function EstoquePage() {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [unidadeFiltro, setUnidadeFiltro] = useState<string>("todos");
-  const [dispFiltro, setDispFiltro] = useState<DisponibilidadeFiltro>("todos");
+  const [disponibilidadeFiltro, setDisponibilidadeFiltro] =
+    useState<DisponibilidadeFiltro>("todos");
   const [pageSize, setPageSize] = useState(10);
   const [currentPageByKey, setCurrentPageByKey] = useState<Record<string, number>>({});
+  const [sortKey, setSortKey] = useState<SortKey>("descricao");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     Promise.all([
@@ -101,32 +136,80 @@ export default function EstoquePage() {
         setAtivosMap(map);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        toast("Erro ao carregar estoque.", "error");
+        setLoading(false);
+      });
+  }, [toast]);
 
   const kpis = useMemo(() => {
-    const critico = itens.filter((i) => isEstoqueCritico(i)).length;
-    const zerado = itens.filter((i) => i.quantidade_disponivel === 0).length;
-    return { total: itens.length, critico, zerado };
+    const criticos = itens.filter((i) => isEstoqueCritico(i)).length;
+    const zerados = itens.filter((i) => i.quantidade_disponivel === 0).length;
+    return {
+      total: itens.length,
+      criticos,
+      zerados,
+    };
   }, [itens]);
 
   const filtered = useMemo(() => {
     return itens.filter((item) => {
       const q = busca.toLowerCase();
-      const equipNome = ativosMap[item.equipamento_id]?.toLowerCase() ?? "";
+      const nomeEquip = ativosMap[item.equipamento_id]?.toLowerCase() ?? "";
       const matchBusca =
         !q ||
         item.descricao.toLowerCase().includes(q) ||
-        equipNome.includes(q) ||
-        item.equipamento_id.toLowerCase().includes(q);
+        item.equipamento_id.toLowerCase().includes(q) ||
+        nomeEquip.includes(q);
+
       const matchUnidade =
         unidadeFiltro === "todos" || item.unidade === unidadeFiltro;
-      const matchDisp = matchDisponibilidade(item, dispFiltro);
-      return matchBusca && matchUnidade && matchDisp;
-    });
-  }, [itens, busca, unidadeFiltro, dispFiltro, ativosMap]);
 
-  const paginationKey = `${busca}|${unidadeFiltro}|${dispFiltro}|${pageSize}`;
+      let matchDisponibilidade = true;
+      if (disponibilidadeFiltro === "disponivel") {
+        matchDisponibilidade = isDisponivelNormal(item);
+      } else if (disponibilidadeFiltro === "critico") {
+        matchDisponibilidade =
+          isEstoqueCritico(item) && item.quantidade_disponivel > 0;
+      } else if (disponibilidadeFiltro === "zerado") {
+        matchDisponibilidade = item.quantidade_disponivel === 0;
+      }
+
+      return matchBusca && matchUnidade && matchDisponibilidade;
+    });
+  }, [itens, busca, unidadeFiltro, disponibilidadeFiltro, ativosMap]);
+
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    const dir = sortDir === "asc" ? 1 : -1;
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "descricao":
+          cmp = a.descricao.localeCompare(b.descricao, "pt-BR");
+          break;
+        case "equipamento": {
+          const nomeA = ativosMap[a.equipamento_id] ?? a.equipamento_id;
+          const nomeB = ativosMap[b.equipamento_id] ?? b.equipamento_id;
+          cmp = nomeA.localeCompare(nomeB, "pt-BR");
+          break;
+        }
+        case "disponivel":
+          cmp = a.quantidade_disponivel - b.quantidade_disponivel;
+          break;
+        case "alocado":
+          cmp = a.quantidade_alocada - b.quantidade_alocada;
+          break;
+        case "unidade":
+          cmp = a.unidade.localeCompare(b.unidade, "pt-BR");
+          break;
+      }
+      return cmp * dir;
+    });
+    return list;
+  }, [filtered, sortKey, sortDir, ativosMap]);
+
+  const paginationKey = `${busca}|${unidadeFiltro}|${disponibilidadeFiltro}|${pageSize}|${sortKey}|${sortDir}`;
   const currentPage = currentPageByKey[paginationKey] ?? 1;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -139,29 +222,39 @@ export default function EstoquePage() {
     setPageSize(size);
     setCurrentPageByKey((prev) => ({
       ...prev,
-      [`${busca}|${unidadeFiltro}|${dispFiltro}|${size}`]: 1,
+      [`${busca}|${unidadeFiltro}|${disponibilidadeFiltro}|${size}`]: 1,
     }));
   };
 
   const paginated = useMemo(() => {
     const start = (safePage - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, safePage, pageSize]);
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, safePage, pageSize]);
 
-  const hasFilters =
-    Boolean(busca) || unidadeFiltro !== "todos" || dispFiltro !== "todos";
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const hasFilters = Boolean(
+    busca || unidadeFiltro !== "todos" || disponibilidadeFiltro !== "todos"
+  );
 
   const clearFilters = () => {
     setBusca("");
     setUnidadeFiltro("todos");
-    setDispFiltro("todos");
+    setDisponibilidadeFiltro("todos");
   };
 
   if (loading) {
     return (
       <PageMotion>
         <PageHeader title="Estoque" description="Carregando..." />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-[180px] rounded-xl bg-muted/60 animate-pulse" />
           ))}
@@ -177,7 +270,7 @@ export default function EstoquePage() {
     <PageMotion>
       <PageHeader
         title="Estoque"
-        description="Controle de itens e quantidades em estoque."
+        description="Controle de itens fungíveis e quantidades em pool."
         action={
           isTI ? (
             <Button
@@ -196,20 +289,20 @@ export default function EstoquePage() {
           label="Total de itens"
           value={kpis.total}
           icon={<Package className="h-5 w-5" />}
-          iconClassName="text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400"
+          iconClassName="text-blue-500 bg-blue-500/10 dark:text-blue-400 dark:bg-blue-400/10"
           index={0}
         />
         <KpiCard
-          label="Estoque crítico"
-          value={kpis.critico}
+          label="Itens críticos"
+          value={kpis.criticos}
           icon={<AlertTriangle className="h-5 w-5" />}
           iconClassName="text-warning bg-warning-muted"
           index={1}
         />
         <KpiCard
           label="Itens zerados"
-          value={kpis.zerado}
-          icon={<Ban className="h-5 w-5" />}
+          value={kpis.zerados}
+          icon={<PackageX className="h-5 w-5" />}
           iconClassName="text-destructive bg-destructive-muted"
           index={2}
         />
@@ -235,11 +328,11 @@ export default function EstoquePage() {
           ))}
         </FilterSelect>
         <FilterSelect
-          value={dispFiltro}
-          onChange={(v) => setDispFiltro(v as DisponibilidadeFiltro)}
+          value={disponibilidadeFiltro}
+          onChange={(v) => setDisponibilidadeFiltro(v as DisponibilidadeFiltro)}
           aria-label="Filtrar por disponibilidade"
         >
-          <option value="todos">Todas disponibilidades</option>
+          <option value="todos">Todas as disponibilidades</option>
           <option value="disponivel">Disponível</option>
           <option value="critico">Crítico</option>
           <option value="zerado">Zerado</option>
@@ -250,7 +343,7 @@ export default function EstoquePage() {
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <EmptyState
             icon={Package}
-            title="Nenhum item em estoque"
+            title="Nenhum item no estoque"
             description="Cadastre o primeiro item para começar."
             actionLabel={isTI ? "Novo item" : undefined}
             onAction={isTI ? () => router.push("/sec/estoque/novo") : undefined}
@@ -274,7 +367,7 @@ export default function EstoquePage() {
                     <span className="font-medium tabular-nums text-foreground">
                       {itens.length}
                     </span>{" "}
-                    item{itens.length !== 1 ? "s" : ""} na lista
+                    item{itens.length !== 1 ? "s" : ""} no estoque
                   </>
                 )}
               </p>
@@ -289,16 +382,56 @@ export default function EstoquePage() {
                 <col style={{ width: "12%" }} />
                 <col style={{ width: "10%" }} />
                 <col style={{ width: "10%" }} />
-                <col style={{ width: "14%" }} />
                 <col style={{ width: "16%" }} />
+                <col style={{ width: "14%" }} />
               </colgroup>
               <thead className="bg-muted/40">
                 <tr>
-                  <th className={thCompactFirst} scope="col">Descrição</th>
-                  <th className={thCompactMid} scope="col">Equipamento</th>
-                  <th className={thCompactMid} scope="col">Disponível/Total</th>
-                  <th className={thCompactMid} scope="col">Alocado</th>
-                  <th className={thCompactMid} scope="col">Unidade</th>
+                  <th className={thCompactFirst} scope="col">
+                    <SortableHeader
+                      label="Descrição"
+                      sortKey="descricao"
+                      activeKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className={thCompactMid} scope="col">
+                    <SortableHeader
+                      label="Equipamento"
+                      sortKey="equipamento"
+                      activeKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className={thCompactMid} scope="col">
+                    <SortableHeader
+                      label="Disponível / Total"
+                      sortKey="disponivel"
+                      activeKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className={thCompactMid} scope="col">
+                    <SortableHeader
+                      label="Alocado"
+                      sortKey="alocado"
+                      activeKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className={thCompactMid} scope="col">
+                    <SortableHeader
+                      label="Unidade"
+                      sortKey="unidade"
+                      activeKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    />
+                  </th>
                   <th className={thCompactMid} scope="col">Localização</th>
                   <th className={thCompactLast} scope="col">Ações</th>
                 </tr>
@@ -321,9 +454,7 @@ export default function EstoquePage() {
                     <tr
                       key={item.estoque_id}
                       className={cn(trHover, "cursor-pointer")}
-                      onClick={() =>
-                        router.push(`/sec/estoque/${item.estoque_id}`)
-                      }
+                      onClick={() => router.push(`/sec/estoque/${item.estoque_id}`)}
                     >
                       <td className={tdCompactName}>
                         <p className="truncate font-medium text-foreground">
@@ -332,7 +463,7 @@ export default function EstoquePage() {
                       </td>
                       <td className={tdCompactCargo}>
                         <span
-                          className="block truncate text-xs"
+                          className="block truncate"
                           title={ativosMap[item.equipamento_id] ?? item.equipamento_id}
                         >
                           {ativosMap[item.equipamento_id] ?? item.equipamento_id}
@@ -340,19 +471,19 @@ export default function EstoquePage() {
                       </td>
                       <td className={cn(tdCompactText, "tabular-nums text-sm")}>
                         <span className={qtyColorClass(item)}>
-                          {item.quantidade_disponivel}/{item.quantidade_total}
+                          {item.quantidade_disponivel} / {item.quantidade_total}
                         </span>
                       </td>
-                      <td className={cn(tdCompactText, "tabular-nums text-xs")}>
+                      <td className={cn(tdCompactText, "tabular-nums text-sm")}>
                         {item.quantidade_alocada}
                       </td>
                       <td className={tdCompactText}>
                         <span className="text-xs font-medium text-foreground/80">
-                          {unidadeLabel(item.unidade)}
+                          {unidadeLabel(item.unidade as UnidadeEstoque)}
                         </span>
                       </td>
                       <td className={tdCompactCargo}>
-                        <span className="block truncate text-xs">
+                        <span className="block truncate" title={item.localizacao}>
                           {item.localizacao || "—"}
                         </span>
                       </td>
