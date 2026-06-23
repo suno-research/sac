@@ -251,3 +251,22 @@ export interface EventoN8NPayload {
   offboarding_id?: string;
   origem?: string;             // identificador do fluxo n8n para rastreabilidade
 }
+
+// ─── AUDITORIA ───────────────────────────────────────────────────────────────
+
+export interface SECAuditLog {
+  audit_id: string;
+  timestamp: string;
+  entidade: string;
+  entidade_id: string;
+  acao: "CREATE" | "UPDATE" | "DELETE";
+  campo_alterado?: string;
+  valor_anterior?: string;
+  valor_novo?: string;
+  usuario_email: string;
+  usuario_nome?: string;
+  origem?: string;
+  ip?: string;
+  session_id?: string;
+  observacao?: string;
+}
