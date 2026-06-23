@@ -2,9 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import {
   ClipboardList,
+  FileText,
   Loader2,
   Plus,
   SearchX,
@@ -616,19 +618,30 @@ export default function AlocacoesPage() {
               {isTI &&
                 (detalhe.status === "ativa" ||
                   detalhe.status === "pendente") && (
-                  <DialogFooter className="gap-2 sm:gap-0">
+                  <DialogFooter className="flex-wrap gap-2 sm:gap-0">
                     {detalhe.status === "ativa" && (
-                      <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={() => {
-                          abrirDevolucao(detalhe);
-                          setDetalhe(null);
-                        }}
-                      >
-                        <Undo2 className="h-4 w-4" />
-                        Registrar devolução
-                      </Button>
+                      <>
+                        <Button variant="outline" className="gap-2" asChild>
+                          <Link
+                            href={`/sec/termos/novo?alocacao_id=${detalhe.alocacao_id}`}
+                            onClick={() => setDetalhe(null)}
+                          >
+                            <FileText className="h-4 w-4" />
+                            Emitir termo
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => {
+                            abrirDevolucao(detalhe);
+                            setDetalhe(null);
+                          }}
+                        >
+                          <Undo2 className="h-4 w-4" />
+                          Registrar devolução
+                        </Button>
+                      </>
                     )}
                     <Button
                       variant="destructive"

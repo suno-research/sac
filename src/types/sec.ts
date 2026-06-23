@@ -191,3 +191,63 @@ export interface Pendencia {
   created_at: string;
   updated_at: string;
 }
+
+// ─── TERMOS ──────────────────────────────────────────────────────────────────
+
+export type StatusTermo =
+  | "pendente"      // emitido, aguardando assinatura
+  | "assinado"      // assinado pelo funcionário
+  | "cancelado";    // termo cancelado (ex: alocação cancelada antes da assinatura)
+
+export interface Termo {
+  termo_id: string;
+  alocacao_id: string;          // FK para ALOCACOES
+  equipamento_id: string;       // snapshot para histórico
+  funcionario_id: string;
+  funcionario_nome: string;     // snapshot
+  funcionario_email: string;    // snapshot
+  status: StatusTermo;
+  data_emissao: string;         // ISO date
+  data_assinatura?: string;     // preenchida ao marcar como assinado
+  assinado_por?: string;        // email de quem registrou a assinatura
+  canal_assinatura?: string;    // "manual" | "clicksign" (fase futura)
+  documento_url?: string;       // URL do PDF gerado ou link ClickSign
+  observacoes?: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  deleted_at?: string;
+  deleted_by?: string;
+}
+
+export type CreateTermoPayload = Omit<
+  Termo,
+  | "termo_id"
+  | "created_at"
+  | "created_by"
+  | "updated_at"
+  | "updated_by"
+  | "deleted_at"
+  | "deleted_by"
+>;
+
+export type UpdateTermoPayload = Partial<CreateTermoPayload> & {
+  status: StatusTermo;
+};
+
+// ─── EVENTOS N8N ─────────────────────────────────────────────────────────────
+
+export type TipoEventoN8N =
+  | "offboarding_iniciado"    // funcionário desligado no SAC → SEC deve cobrar devolução
+  | "offboarding_concluido";  // offboarding finalizado no SAC → SEC pode fechar pendências
+
+export interface EventoN8NPayload {
+  evento: TipoEventoN8N;
+  funcionario_id: string;
+  funcionario_nome: string;
+  funcionario_email: string;
+  data_desligamento?: string;
+  offboarding_id?: string;
+  origem?: string;             // identificador do fluxo n8n para rastreabilidade
+}
