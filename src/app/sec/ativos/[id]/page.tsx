@@ -14,6 +14,7 @@ import {
   Package,
   Server,
   Smartphone,
+  Tablet,
   ShieldCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
